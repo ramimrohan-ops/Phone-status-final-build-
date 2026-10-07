@@ -80,7 +80,7 @@ object WidgetRenderer {
             v.setTextViewText(R.id.w_line2, "CPU $cpuText · $hz Hz")
         } else {
             v.setTextViewText(R.id.w_batt_temp, "${f1(s.battery.tempC)} °C")
-            v.setTextViewText(R.id.w_updated, "Live $time")
+            if (kind == Kind.WIDE) v.setTextViewText(R.id.w_updated, "Live $time")
             v.setTextViewText(R.id.w_ram_val, "$ramPct%")
             v.setProgressBar(R.id.w_ram_bar, 100, ramPct, false)
             v.setTextViewText(R.id.w_sto_val, "$stoPct%")
