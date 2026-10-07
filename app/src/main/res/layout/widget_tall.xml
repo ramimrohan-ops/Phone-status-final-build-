@@ -37,9 +37,9 @@
             android:orientation="horizontal">
             <FrameLayout
                 android:id="@+id/w_led_batt"
-                android:layout_width="9dp"
-                android:layout_height="9dp"
-                android:layout_marginEnd="5dp"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:layout_marginEnd="6dp"
                 android:background="@drawable/led_off" />
             <TextView
                 android:layout_width="wrap_content"
@@ -257,9 +257,9 @@
             android:orientation="horizontal">
             <FrameLayout
                 android:id="@+id/w_led_cpu"
-                android:layout_width="9dp"
-                android:layout_height="9dp"
-                android:layout_marginEnd="5dp"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:layout_marginEnd="6dp"
                 android:background="@drawable/led_off" />
             <TextView
                 android:layout_width="wrap_content"
@@ -293,9 +293,9 @@
             android:orientation="horizontal">
             <FrameLayout
                 android:id="@+id/w_led_gpu"
-                android:layout_width="9dp"
-                android:layout_height="9dp"
-                android:layout_marginEnd="5dp"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:layout_marginEnd="6dp"
                 android:background="@drawable/led_off" />
             <TextView
                 android:layout_width="wrap_content"
