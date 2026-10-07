@@ -17,6 +17,9 @@ import kotlin.math.roundToInt
 /** Reads everything that does NOT need root. All calls are cheap and safe to poll. */
 object StatsReader {
 
+    // BatteryManager.BATTERY_PROPERTY_STATE_OF_HEALTH is not in the public SDK stubs, so use its value.
+    private const val PROPERTY_STATE_OF_HEALTH = 10
+
     fun readAll(ctx: Context): Stats = Stats(
         battery = battery(ctx),
         ram = ram(ctx),
@@ -70,7 +73,7 @@ object StatsReader {
             i.getIntExtra(BatteryManager.EXTRA_CYCLE_COUNT, -1).takeIf { it > 0 }
         } else null
         val soh = if (Build.VERSION.SDK_INT >= 34) {
-            bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_STATE_OF_HEALTH).takeIf { it in 1..100 }
+            bm.getIntProperty(PROPERTY_STATE_OF_HEALTH).takeIf { it in 1..100 }
         } else null
 
         return BatteryInfo(
