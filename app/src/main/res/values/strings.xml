@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Phone Status</string>
+    <string name="widget_label">Phone Status</string>
+    <string name="widget_description">Battery, RAM, storage, refresh rate and temperature, live every second.</string>
+</resources>

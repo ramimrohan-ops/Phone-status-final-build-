@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg">#FF05060C</color>
+    <color name="ic_bg">#FF0B1020</color>
+    <color name="text_primary">#FFF2F5FF</color>
+    <color name="text_secondary">#FF9AA4C2</color>
+    <color name="c_battery">#FF3DF5A7</color>
+    <color name="c_low">#FFFF5470</color>
+    <color name="c_ram">#FFA78BFA</color>
+    <color name="c_storage">#FFFFB454</color>
+    <color name="c_display">#FF4CC9F0</color>
+    <color name="divider">#26FFFFFF</color>
+    <color name="led_ok">#FF3DF5A7</color>
+    <color name="led_warn">#FFFFB454</color>
+    <color name="led_hot">#FFFF5470</color>
+    <color name="led_off">#FF4A5270</color>
+</resources>
