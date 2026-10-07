@@ -20,6 +20,15 @@ object StatsReader {
     // BatteryManager.BATTERY_PROPERTY_STATE_OF_HEALTH is not in the public SDK stubs, so use its value.
     private const val PROPERTY_STATE_OF_HEALTH = 10
 
+    /** Some battery properties need a permission normal apps don't get; treat that as "not available". */
+    private fun safeInt(bm: BatteryManager, id: Int): Int? = try {
+        bm.getIntProperty(id)
+    } catch (_: SecurityException) {
+        null
+    } catch (_: Exception) {
+        null
+    }
+
     fun readAll(ctx: Context): Stats = Stats(
         battery = battery(ctx),
         ram = ram(ctx),
@@ -57,7 +66,7 @@ object StatsReader {
         }
 
         val bm = ctx.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
-        val raw = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW)
+        val raw = safeInt(bm, BatteryManager.BATTERY_PROPERTY_CURRENT_NOW) ?: Int.MIN_VALUE
         // Most devices report microamps, a few report milliamps.
         val currentMa = if (raw == Int.MIN_VALUE) null else {
             val v = abs(raw)
@@ -65,7 +74,11 @@ object StatsReader {
         }
 
         // No-root capacity: the phone's measured value if readable, else remaining charge / level.
-        val counterUah = bm.getLongProperty(BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER)
+        val counterUah = try {
+            bm.getLongProperty(BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER)
+        } catch (_: Exception) {
+            0L
+        }
         val capacityMah = RealCapacity.fullMah() ?: CapacityEstimator.update(ctx, counterUah, pct)
 
         // Android 14+ extras; older versions simply report nothing.
@@ -73,7 +86,7 @@ object StatsReader {
             i.getIntExtra(BatteryManager.EXTRA_CYCLE_COUNT, -1).takeIf { it > 0 }
         } else null
         val soh = if (Build.VERSION.SDK_INT >= 34) {
-            bm.getIntProperty(PROPERTY_STATE_OF_HEALTH).takeIf { it in 1..100 }
+            safeInt(bm, PROPERTY_STATE_OF_HEALTH)?.takeIf { it in 1..100 }
         } else null
 
         return BatteryInfo(
