@@ -17,9 +17,6 @@ import kotlin.math.roundToInt
 /** Reads everything that does NOT need root. All calls are cheap and safe to poll. */
 object StatsReader {
 
-    // BatteryManager.BATTERY_PROPERTY_STATE_OF_HEALTH is not in the public SDK stubs, so use its value.
-    private const val PROPERTY_STATE_OF_HEALTH = 10
-
     /** Some battery properties need a permission normal apps don't get; treat that as "not available". */
     private fun safeInt(bm: BatteryManager, id: Int): Int? = try {
         bm.getIntProperty(id)
@@ -85,9 +82,6 @@ object StatsReader {
         val cycles = if (Build.VERSION.SDK_INT >= 34) {
             i.getIntExtra(BatteryManager.EXTRA_CYCLE_COUNT, -1).takeIf { it > 0 }
         } else null
-        val soh = if (Build.VERSION.SDK_INT >= 34) {
-            safeInt(bm, PROPERTY_STATE_OF_HEALTH)?.takeIf { it in 1..100 }
-        } else null
 
         return BatteryInfo(
             level = pct,
@@ -101,7 +95,6 @@ object StatsReader {
             capacityMah = capacityMah,
             designMah = DesignCapacity.read(ctx),
             cycleCount = cycles,
-            sohPct = soh,
         )
     }
 
