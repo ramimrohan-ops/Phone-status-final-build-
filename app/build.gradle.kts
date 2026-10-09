@@ -12,8 +12,8 @@ android {
         applicationId = "dev.ramim.phonestatus"
         minSdk = 26
         targetSdk = 35
-        versionCode = 13
-        versionName = "2.2"
+        versionCode = 14
+        versionName = "2.3"
     }
 
     // Fixed debug key, so every GitHub build is signed the same and installs over the previous one.

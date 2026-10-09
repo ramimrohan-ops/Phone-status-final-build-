@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Thin battery bar: mint normally, red when low. The app code toggles which one shows. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="4dp">
+
+    <ProgressBar
+        android:id="@+id/w_battery_bar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:max="100"
+        android:maxHeight="4dp"
+        android:minHeight="4dp"
+        android:progress="0"
+        android:progressDrawable="@drawable/bar_thin_mint" />
+
+    <ProgressBar
+        android:id="@+id/w_battery_bar_low"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:max="100"
+        android:maxHeight="4dp"
+        android:minHeight="4dp"
+        android:progress="0"
+        android:progressDrawable="@drawable/bar_thin_red"
+        android:visibility="gone" />
+</FrameLayout>
