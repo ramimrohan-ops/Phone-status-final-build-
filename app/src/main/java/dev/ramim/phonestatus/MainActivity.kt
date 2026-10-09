@@ -4,10 +4,12 @@ import android.Manifest
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -18,6 +20,7 @@ import androidx.activity.viewModels
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.ramim.phonestatus.data.StatsViewModel
+import dev.ramim.phonestatus.live.ForegroundGate
 import dev.ramim.phonestatus.live.LiveUpdateService
 import dev.ramim.phonestatus.ui.Dashboard
 import dev.ramim.phonestatus.ui.PhoneStatusTheme
@@ -49,12 +52,17 @@ class MainActivity : ComponentActivity() {
                 val stats by vm.stats.collectAsStateWithLifecycle()
                 val thermal by vm.thermal.collectAsStateWithLifecycle()
                 val liveHz by rememberLiveHz()
+                val smartPause by ForegroundGate.connected.collectAsStateWithLifecycle()
                 Dashboard(
                     stats = stats,
                     thermal = thermal,
                     liveHz = liveHz,
                     onAddWidget = { requestPinWidget(this) },
                     onRetryRoot = vm::retryRoot,
+                    smartPause = smartPause,
+                    onOpenAccessibility = {
+                        startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                    },
                 )
             }
         }

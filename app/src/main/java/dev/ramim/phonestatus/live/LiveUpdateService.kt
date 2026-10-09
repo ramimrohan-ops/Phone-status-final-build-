@@ -40,7 +40,7 @@ object LiveStats {
 
 /**
  * Pushes the home-screen widget every second while the screen is on.
- * Pauses while the screen is off and stops itself when no widget is placed.
+ * Pauses while the screen is off, or (with the accessibility service on) while another app is in front, and stops itself when no widget is placed.
  */
 class LiveUpdateService : Service() {
 
@@ -88,6 +88,7 @@ class LiveUpdateService : Service() {
 
         while (true) {
             screenOn.first { it } // suspends here while the screen is off
+            ForegroundGate.allowed.first { it } // and here while another app is in front
             val t0 = SystemClock.elapsedRealtime()
 
             if (WidgetRenderer.widgetIds(ctx).isEmpty()) {

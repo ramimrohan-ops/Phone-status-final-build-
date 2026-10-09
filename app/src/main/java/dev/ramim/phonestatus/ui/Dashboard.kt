@@ -80,6 +80,8 @@ fun Dashboard(
     liveHz: Float,
     onAddWidget: () -> Unit,
     onRetryRoot: () -> Unit,
+    smartPause: Boolean,
+    onOpenAccessibility: () -> Unit,
 ) {
     Box(
         Modifier
@@ -106,6 +108,7 @@ fun Dashboard(
             }
             DisplayCard(stats.display, liveHz)
             ThermalCard(stats.battery.tempC, thermal, onRetryRoot)
+            SmartPauseCard(smartPause, onOpenAccessibility)
             Button(
                 onClick = onAddWidget,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
@@ -328,6 +331,40 @@ private fun ThermalCard(batteryTempC: Float, t: ThermalInfo, onRetryRoot: () -> 
             )
             TextButton(onClick = onRetryRoot) {
                 Text("Retry root access", color = Palette.Display)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SmartPauseCard(on: Boolean, onOpenSettings: () -> Unit) {
+    GlassCard(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            SectionLabel("SMART PAUSE")
+            Pill(
+                text = if (on) "ON" else "OFF",
+                color = if (on) Palette.TempOk else Palette.TextSecondary,
+                filled = on,
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = if (on) {
+                "Live updates run only on your home screen and in this app, and pause in other apps."
+            } else {
+                "Updates run whenever the screen is on. Switch on the accessibility service to pause them while you are in other apps. " +
+                    "If the switch is greyed out: Settings, Apps, Phone Status, three dots, Allow restricted settings."
+            },
+            color = Palette.TextSecondary,
+            fontSize = 13.sp,
+        )
+        if (!on) {
+            TextButton(onClick = onOpenSettings) {
+                Text("Open Accessibility settings", color = Palette.Battery)
             }
         }
     }
