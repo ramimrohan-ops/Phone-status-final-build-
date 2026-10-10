@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  3 x 2 widget (about 180 x 110 dp). Nothing is clickable except the refresh button (w_refresh).
-  left  = four rings, 2 x 2: battery, current / RAM, CPU clock. Each shows a small label, a value and a small line.
-  right = top apps (header with refresh button, 3 lines), storage bar, CPU and GPU temperatures
+  3 x 2 widget. A 3 x 2 on this phone's launcher is about 276 x 187 dp. Nothing is clickable except the refresh button (w_refresh).
+  left  = four equal rings (72 dp), 2 x 2: battery, current / RAM, CPU clock. Each shows a small label, a value and a small line.
+  right = top apps (header with refresh button, 5 lines), storage bar, CPU and GPU temperatures
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/w_root"
@@ -15,10 +15,11 @@
     android:paddingStart="8dp"
     android:paddingTop="8dp">
 
-    <!-- Left: 2 x 2 rings -->
+    <!-- Left: 2 x 2 rings, centred top to bottom -->
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
+        android:gravity="center_vertical"
         android:orientation="vertical">
 
         <LinearLayout
@@ -26,8 +27,8 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal">
             <FrameLayout
-                android:layout_width="42dp"
-                android:layout_height="42dp">
+                android:layout_width="72dp"
+                android:layout_height="72dp">
                 <ImageView
                     android:id="@+id/w_batt_ring"
                     android:layout_width="match_parent"
@@ -46,7 +47,7 @@
                         android:letterSpacing="0.08"
                         android:text="BATT"
                         android:textColor="@color/text_label"
-                        android:textSize="5.5sp" />
+                        android:textSize="7sp" />
                     <TextView
                         android:id="@+id/w_battery_pct"
                         android:layout_width="wrap_content"
@@ -55,7 +56,7 @@
                         android:includeFontPadding="false"
                         android:text="--"
                         android:textColor="@color/text_primary"
-                        android:textSize="12.5sp" />
+                        android:textSize="24sp" />
                     <TextView
                         android:id="@+id/w_batt_temp"
                         android:layout_width="wrap_content"
@@ -63,13 +64,13 @@
                         android:includeFontPadding="false"
                         android:text="--°"
                         android:textColor="@color/text_label"
-                        android:textSize="6.5sp" />
+                        android:textSize="9sp" />
                 </LinearLayout>
             </FrameLayout>
             <FrameLayout
-                android:layout_width="42dp"
-                android:layout_height="42dp"
-        android:layout_marginStart="4dp">
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:layout_marginStart="4dp">
                 <ImageView
                     android:id="@+id/w_cur_ring"
                     android:layout_width="match_parent"
@@ -87,7 +88,7 @@
                         android:includeFontPadding="false"
                         android:text="▼"
                         android:textColor="@color/text_label"
-                        android:textSize="5sp" />
+                        android:textSize="7sp" />
                     <TextView
                         android:id="@+id/w_cur_val"
                         android:layout_width="wrap_content"
@@ -96,30 +97,26 @@
                         android:includeFontPadding="false"
                         android:text="—"
                         android:textColor="@color/text_primary"
-                        android:textSize="11.5sp" />
+                        android:textSize="21sp" />
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:includeFontPadding="false"
                         android:text="mA"
                         android:textColor="@color/text_label"
-                        android:textSize="6sp" />
+                        android:textSize="8sp" />
                 </LinearLayout>
             </FrameLayout>
         </LinearLayout>
 
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
-
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
             android:orientation="horizontal">
             <FrameLayout
-                android:layout_width="42dp"
-                android:layout_height="42dp">
+                android:layout_width="72dp"
+                android:layout_height="72dp">
                 <ImageView
                     android:id="@+id/w_ram_ring"
                     android:layout_width="match_parent"
@@ -138,7 +135,7 @@
                         android:letterSpacing="0.08"
                         android:text="RAM"
                         android:textColor="@color/text_label"
-                        android:textSize="5.5sp" />
+                        android:textSize="7sp" />
                     <TextView
                         android:id="@+id/w_ram_val"
                         android:layout_width="wrap_content"
@@ -147,7 +144,7 @@
                         android:includeFontPadding="false"
                         android:text="--"
                         android:textColor="@color/text_primary"
-                        android:textSize="12.5sp" />
+                        android:textSize="24sp" />
                     <TextView
                         android:id="@+id/w_ram_sub"
                         android:layout_width="wrap_content"
@@ -155,13 +152,13 @@
                         android:includeFontPadding="false"
                         android:text="of --"
                         android:textColor="@color/text_label"
-                        android:textSize="5.5sp" />
+                        android:textSize="8sp" />
                 </LinearLayout>
             </FrameLayout>
             <FrameLayout
-                android:layout_width="42dp"
-                android:layout_height="42dp"
-        android:layout_marginStart="4dp">
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:layout_marginStart="4dp">
                 <ImageView
                     android:id="@+id/w_cpu_ring"
                     android:layout_width="match_parent"
@@ -180,7 +177,7 @@
                         android:letterSpacing="0.08"
                         android:text="CPU"
                         android:textColor="@color/text_label"
-                        android:textSize="5.5sp" />
+                        android:textSize="7sp" />
                     <TextView
                         android:id="@+id/w_cpu_ghz"
                         android:layout_width="wrap_content"
@@ -189,14 +186,14 @@
                         android:includeFontPadding="false"
                         android:text="—"
                         android:textColor="@color/text_primary"
-                        android:textSize="12.5sp" />
+                        android:textSize="24sp" />
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:includeFontPadding="false"
                         android:text="GHz"
                         android:textColor="@color/text_label"
-                        android:textSize="6sp" />
+                        android:textSize="8sp" />
                 </LinearLayout>
             </FrameLayout>
         </LinearLayout>
@@ -207,8 +204,8 @@
         android:layout_width="1dp"
         android:layout_height="match_parent"
         android:layout_marginBottom="2dp"
-        android:layout_marginEnd="5dp"
-        android:layout_marginStart="5dp"
+        android:layout_marginEnd="6dp"
+        android:layout_marginStart="8dp"
         android:layout_marginTop="2dp"
         android:background="@color/divider" />
 
@@ -233,22 +230,22 @@
                 android:letterSpacing="0.1"
                 android:text="TOP"
                 android:textColor="@color/text_label"
-                android:textSize="6.5sp" />
+                android:textSize="7.5sp" />
             <TextView
                 android:id="@+id/w_apps_age"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
+                android:layout_marginStart="5dp"
                 android:layout_weight="1"
                 android:includeFontPadding="false"
                 android:singleLine="true"
                 android:text=""
                 android:textColor="@color/text_dim"
-                android:textSize="6.5sp" />
+                android:textSize="7.5sp" />
             <FrameLayout
                 android:id="@+id/w_refresh"
-                android:layout_width="22dp"
-                android:layout_height="17dp"
+                android:layout_width="26dp"
+                android:layout_height="19dp"
                 android:background="@drawable/btn_refresh">
                 <TextView
                     android:id="@+id/w_refresh_text"
@@ -259,39 +256,39 @@
                     android:includeFontPadding="false"
                     android:text="↻"
                     android:textColor="#FF07130E"
-                    android:textSize="12sp" />
+                    android:textSize="14sp" />
             </FrameLayout>
         </LinearLayout>
 
-        <!-- Shown instead of the three lines when there is no list yet (Tap refresh, Shizuku off ...) -->
+        <!-- Shown instead of the five lines when there is no list yet (Tap refresh, Shizuku off ...) -->
         <TextView
             android:id="@+id/w_apps_note"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="3dp"
+            android:layout_marginTop="6dp"
             android:ellipsize="end"
             android:includeFontPadding="false"
-            android:maxLines="3"
+            android:maxLines="4"
             android:text=""
             android:textColor="@color/text_label"
-            android:textSize="8sp"
+            android:textSize="9sp"
             android:visibility="gone" />
 
         <LinearLayout
             android:id="@+id/w_app1_row"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
+            android:layout_marginTop="5dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
             <TextView
                 android:id="@+id/w_app1_rank"
-                android:layout_width="7dp"
+                android:layout_width="8dp"
                 android:layout_height="wrap_content"
                 android:includeFontPadding="false"
                 android:text=""
                 android:textColor="@color/text_dim"
-                android:textSize="6.5sp" />
+                android:textSize="7sp" />
             <TextView
                 android:id="@+id/w_app1_name"
                 android:layout_width="0dp"
@@ -303,7 +300,7 @@
                 android:singleLine="true"
                 android:text=""
                 android:textColor="@color/text_primary"
-                android:textSize="9sp" />
+                android:textSize="10sp" />
             <TextView
                 android:id="@+id/w_app1_mb"
                 android:layout_width="wrap_content"
@@ -312,23 +309,23 @@
                 android:includeFontPadding="false"
                 android:text=""
                 android:textColor="@color/text_label"
-                android:textSize="8sp" />
+                android:textSize="9sp" />
         </LinearLayout>
         <LinearLayout
             android:id="@+id/w_app2_row"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
+            android:layout_marginTop="5dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
             <TextView
                 android:id="@+id/w_app2_rank"
-                android:layout_width="7dp"
+                android:layout_width="8dp"
                 android:layout_height="wrap_content"
                 android:includeFontPadding="false"
                 android:text=""
                 android:textColor="@color/text_dim"
-                android:textSize="6.5sp" />
+                android:textSize="7sp" />
             <TextView
                 android:id="@+id/w_app2_name"
                 android:layout_width="0dp"
@@ -340,7 +337,7 @@
                 android:singleLine="true"
                 android:text=""
                 android:textColor="@color/text_primary"
-                android:textSize="9sp" />
+                android:textSize="10sp" />
             <TextView
                 android:id="@+id/w_app2_mb"
                 android:layout_width="wrap_content"
@@ -349,23 +346,23 @@
                 android:includeFontPadding="false"
                 android:text=""
                 android:textColor="@color/text_label"
-                android:textSize="8sp" />
+                android:textSize="9sp" />
         </LinearLayout>
         <LinearLayout
             android:id="@+id/w_app3_row"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
+            android:layout_marginTop="5dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
             <TextView
                 android:id="@+id/w_app3_rank"
-                android:layout_width="7dp"
+                android:layout_width="8dp"
                 android:layout_height="wrap_content"
                 android:includeFontPadding="false"
                 android:text=""
                 android:textColor="@color/text_dim"
-                android:textSize="6.5sp" />
+                android:textSize="7sp" />
             <TextView
                 android:id="@+id/w_app3_name"
                 android:layout_width="0dp"
@@ -377,7 +374,7 @@
                 android:singleLine="true"
                 android:text=""
                 android:textColor="@color/text_primary"
-                android:textSize="9sp" />
+                android:textSize="10sp" />
             <TextView
                 android:id="@+id/w_app3_mb"
                 android:layout_width="wrap_content"
@@ -386,7 +383,81 @@
                 android:includeFontPadding="false"
                 android:text=""
                 android:textColor="@color/text_label"
-                android:textSize="8sp" />
+                android:textSize="9sp" />
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/w_app4_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+            <TextView
+                android:id="@+id/w_app4_rank"
+                android:layout_width="8dp"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:text=""
+                android:textColor="@color/text_dim"
+                android:textSize="7sp" />
+            <TextView
+                android:id="@+id/w_app4_name"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="false"
+                android:singleLine="true"
+                android:text=""
+                android:textColor="@color/text_primary"
+                android:textSize="10sp" />
+            <TextView
+                android:id="@+id/w_app4_mb"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="3dp"
+                android:includeFontPadding="false"
+                android:text=""
+                android:textColor="@color/text_label"
+                android:textSize="9sp" />
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/w_app5_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+            <TextView
+                android:id="@+id/w_app5_rank"
+                android:layout_width="8dp"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:text=""
+                android:textColor="@color/text_dim"
+                android:textSize="7sp" />
+            <TextView
+                android:id="@+id/w_app5_name"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="false"
+                android:singleLine="true"
+                android:text=""
+                android:textColor="@color/text_primary"
+                android:textSize="10sp" />
+            <TextView
+                android:id="@+id/w_app5_mb"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="3dp"
+                android:includeFontPadding="false"
+                android:text=""
+                android:textColor="@color/text_label"
+                android:textSize="9sp" />
         </LinearLayout>
 
         <FrameLayout
@@ -408,7 +479,7 @@
                 android:letterSpacing="0.1"
                 android:text="STO"
                 android:textColor="@color/text_label"
-                android:textSize="6sp" />
+                android:textSize="7sp" />
             <TextView
                 android:id="@+id/w_sto_val"
                 android:layout_width="wrap_content"
@@ -417,31 +488,31 @@
                 android:includeFontPadding="false"
                 android:text="--"
                 android:textColor="@color/text_primary"
-                android:textSize="7.5sp" />
+                android:textSize="8.5sp" />
         </LinearLayout>
         <ProgressBar
             android:id="@+id/w_sto_bar"
             style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="match_parent"
-            android:layout_height="3dp"
-            android:layout_marginTop="2dp"
+            android:layout_height="4dp"
+            android:layout_marginTop="3dp"
             android:max="100"
-            android:maxHeight="3dp"
-            android:minHeight="3dp"
+            android:maxHeight="4dp"
+            android:minHeight="4dp"
             android:progress="0"
             android:progressDrawable="@drawable/bar_thin_white" />
 
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="7dp"
             android:background="@color/divider" />
 
         <!-- CPU and GPU temperatures -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="3dp"
+            android:layout_marginTop="6dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
             <TextView
@@ -451,19 +522,19 @@
                 android:includeFontPadding="false"
                 android:text="CPU"
                 android:textColor="@color/text_label"
-                android:textSize="6sp" />
+                android:textSize="7sp" />
             <TextView
                 android:id="@+id/w_cpu_temp"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="3dp"
+                android:layout_marginStart="4dp"
                 android:layout_weight="1"
                 android:fontFamily="sans-serif-medium"
                 android:includeFontPadding="false"
                 android:singleLine="true"
                 android:text="—"
                 android:textColor="@color/text_primary"
-                android:textSize="8.5sp" />
+                android:textSize="10sp" />
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -471,19 +542,19 @@
                 android:includeFontPadding="false"
                 android:text="GPU"
                 android:textColor="@color/text_label"
-                android:textSize="6sp" />
+                android:textSize="7sp" />
             <TextView
                 android:id="@+id/w_gpu_temp"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="3dp"
+                android:layout_marginStart="4dp"
                 android:layout_weight="1"
                 android:fontFamily="sans-serif-medium"
                 android:includeFontPadding="false"
                 android:singleLine="true"
                 android:text="—"
                 android:textColor="@color/text_primary"
-                android:textSize="8.5sp" />
+                android:textSize="10sp" />
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>

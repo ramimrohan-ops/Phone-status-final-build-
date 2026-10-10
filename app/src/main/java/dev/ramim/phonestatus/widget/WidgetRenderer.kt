@@ -53,6 +53,8 @@ object WidgetRenderer {
         AppRow(R.id.w_app1_row, R.id.w_app1_rank, R.id.w_app1_name, R.id.w_app1_mb),
         AppRow(R.id.w_app2_row, R.id.w_app2_rank, R.id.w_app2_name, R.id.w_app2_mb),
         AppRow(R.id.w_app3_row, R.id.w_app3_rank, R.id.w_app3_name, R.id.w_app3_mb),
+        AppRow(R.id.w_app4_row, R.id.w_app4_rank, R.id.w_app4_name, R.id.w_app4_mb),
+        AppRow(R.id.w_app5_row, R.id.w_app5_rank, R.id.w_app5_name, R.id.w_app5_mb),
     )
 
     fun widgetIds(ctx: Context): IntArray =
@@ -75,7 +77,7 @@ object WidgetRenderer {
     private fun build(ctx: Context, s: Stats, t: ThermalInfo): RemoteViews {
         val v = RemoteViews(ctx.packageName, R.layout.widget_rect)
         val density = ctx.resources.displayMetrics.density
-        val ring = (42 * density).roundToInt()
+        val ring = (72 * density).roundToInt()
         val b = s.battery
 
         // Refresh button: the only thing on the widget that reacts to a tap.
