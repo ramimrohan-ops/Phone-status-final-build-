@@ -51,7 +51,7 @@
             android:foregroundServiceType="specialUse">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Refreshes the home-screen widget every second" />
+                android:value="Refreshes the home-screen widget every 3 seconds" />
         </service>
 
 

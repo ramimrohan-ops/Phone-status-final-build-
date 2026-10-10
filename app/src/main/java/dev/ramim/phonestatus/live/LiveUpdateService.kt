@@ -18,6 +18,7 @@ import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import dev.ramim.phonestatus.MainActivity
 import dev.ramim.phonestatus.R
+import dev.ramim.phonestatus.data.FreqReader
 import dev.ramim.phonestatus.data.RootSetup
 import dev.ramim.phonestatus.data.StatsReader
 import dev.ramim.phonestatus.data.ThermalInfo
@@ -41,7 +42,8 @@ object LiveStats {
 }
 
 /**
- * Pushes the home-screen widget every second while the screen is on.
+ * Pushes the home-screen widget every 3 seconds while the screen is on.
+ * The CPU and GPU temperatures are read about every 10 seconds and held in between; the CPU clock and everything else every 3 seconds.
  * Runs only while Home Dragon says the home screen is on top (and the screen is on). Pauses otherwise, and stops itself when no widget is placed.
  */
 class LiveUpdateService : Service() {
@@ -92,6 +94,9 @@ class LiveUpdateService : Service() {
         val ctx = applicationContext
         withContext(Dispatchers.IO) { RootSetup.apply(ctx.packageName) }
 
+        var lastThermal: ThermalInfo? = null
+        var lastThermalAt = 0L
+
         while (true) {
             // Suspends here while the screen is off or another app is in front.
             val shouldRun = combine(screenOn, ForegroundGate.allowed) { on, ok -> on && ok }
@@ -111,14 +116,21 @@ class LiveUpdateService : Service() {
             }
 
             val (stats, thermal) = withContext(Dispatchers.IO) {
-                StatsReader.readAll(ctx) to ThermalReader.read()
+                val now = SystemClock.elapsedRealtime()
+                val held = lastThermal
+                val t = if (held == null || now - lastThermalAt >= THERMAL_EVERY_MS) {
+                    ThermalReader.read().also { lastThermal = it; lastThermalAt = now }
+                } else {
+                    held.copy(freq = FreqReader.read(held.viaRoot)) // temperatures held, clock speed fresh
+                }
+                StatsReader.readAll(ctx) to t
             }
             LiveStats.thermal = thermal
             WidgetRenderer.renderAll(ctx, stats, thermal)
             LiveDebug.tick()
 
             val spent = SystemClock.elapsedRealtime() - t0
-            delay((1_000L - spent).coerceAtLeast(150L))
+            delay((UPDATE_EVERY_MS - spent).coerceAtLeast(150L))
         }
     }
 
@@ -126,7 +138,7 @@ class LiveUpdateService : Service() {
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         nm.createNotificationChannel(
             NotificationChannel(CHANNEL_ID, "Live widget", NotificationManager.IMPORTANCE_MIN).apply {
-                description = "Keeps the home-screen widget updating every second"
+                description = "Keeps the home-screen widget updating every 3 seconds"
                 setShowBadge(false)
             },
         )
@@ -139,7 +151,7 @@ class LiveUpdateService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat)
             .setContentTitle("Phone Status")
-            .setContentText("Live widget, updating every second while the screen is on")
+            .setContentText("Live widget, updating every 3 seconds while the screen is on")
             .setOngoing(true)
             .setSilent(true)
             .setPriority(NotificationCompat.PRIORITY_MIN)
@@ -176,6 +188,12 @@ class LiveUpdateService : Service() {
     companion object {
         private const val CHANNEL_ID = "live_widget"
         private const val NOTIFICATION_ID = 1
+
+        /** The widget is redrawn this often. */
+        private const val UPDATE_EVERY_MS = 3_000L
+
+        /** CPU and GPU temperatures are read again after this long (every third redraw, so about every 10 seconds). */
+        private const val THERMAL_EVERY_MS = 9_000L
 
         /** Starts the service; if Android blocks a background start, the app start covers it. */
         fun start(ctx: Context) {

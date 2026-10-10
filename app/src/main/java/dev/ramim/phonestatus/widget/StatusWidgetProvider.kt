@@ -34,7 +34,7 @@ class StatusWidgetProvider : AppWidgetProvider() {
         LiveUpdateService.stop(context)
     }
 
-    /** Quick draw with cached thermal data; the service takes over every second after this. */
+    /** Quick draw with cached thermal data; the service takes over every 3 seconds after this. */
     private fun drawNow(context: Context) {
         WidgetRenderer.renderAll(
             context,

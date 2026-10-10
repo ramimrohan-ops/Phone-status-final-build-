@@ -53,8 +53,6 @@ object WidgetRenderer {
         AppRow(R.id.w_app1_row, R.id.w_app1_rank, R.id.w_app1_name, R.id.w_app1_mb),
         AppRow(R.id.w_app2_row, R.id.w_app2_rank, R.id.w_app2_name, R.id.w_app2_mb),
         AppRow(R.id.w_app3_row, R.id.w_app3_rank, R.id.w_app3_name, R.id.w_app3_mb),
-        AppRow(R.id.w_app4_row, R.id.w_app4_rank, R.id.w_app4_name, R.id.w_app4_mb),
-        AppRow(R.id.w_app5_row, R.id.w_app5_rank, R.id.w_app5_name, R.id.w_app5_mb),
     )
 
     fun widgetIds(ctx: Context): IntArray =
@@ -83,7 +81,7 @@ object WidgetRenderer {
         // Refresh button: the only thing on the widget that reacts to a tap.
         val ta = TopApps.state.value
         v.setOnClickPendingIntent(R.id.w_refresh, refreshIntent(ctx))
-        v.setTextViewText(R.id.w_refresh_text, if (ta.busy) "…" else "↻")
+        v.setTextViewText(R.id.w_refresh_text, if (ta.busy) "Reading…" else "Refresh")
 
         // ---- Battery ring ----
         val battColor = batteryColor(b)

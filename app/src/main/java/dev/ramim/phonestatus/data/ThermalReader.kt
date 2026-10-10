@@ -6,7 +6,7 @@ import java.io.File
  * Reads /sys/class/thermal. Normal apps are blocked from this by SELinux on most phones,
  * so we go through the persistent root shell first and fall back to a direct read.
  *
- * To stay cheap at 1 Hz: a full scan of every sensor runs every 10th read,
+ * To stay cheap: a full scan of every sensor runs at most every 8 seconds,
  * the reads in between only touch the CPU/GPU sensors.
  */
 object ThermalReader {
@@ -16,7 +16,9 @@ object ThermalReader {
 
     private val zonesByDir = LinkedHashMap<String, ThermalZone>()
     private var fastDirs: List<String> = emptyList()
-    private var ticksSinceFull = Int.MAX_VALUE
+    private var lastFullAtMs = 0L
+
+    private const val FULL_EVERY_MS = 8_000L
 
     // Shell builtins only (read/echo), so no process is spawned per sensor.
     private const val BODY =
@@ -28,7 +30,7 @@ object ThermalReader {
     fun resetRoot() {
         rootState = RootState.UNKNOWN
         lastDeniedAtMs = 0L
-        ticksSinceFull = Int.MAX_VALUE
+        lastFullAtMs = 0L
         RootShell.reset()
     }
 
@@ -39,7 +41,7 @@ object ThermalReader {
         val retryDue = now - lastDeniedAtMs > 30_000L
 
         if (allowRoot && (rootState != RootState.DENIED || retryDue)) {
-            val full = ticksSinceFull >= 10 || fastDirs.isEmpty()
+            val full = now - lastFullAtMs >= FULL_EVERY_MS || fastDirs.isEmpty()
             val cmd = if (full) FULL_CMD
             else "for z in ${fastDirs.joinToString(" ")}; do $BODY; done"
             // First attempt waits longer so there is time to tap "Grant" in the root prompt.
@@ -53,16 +55,14 @@ object ThermalReader {
                 viaRoot = true
                 if (full) {
                     zonesByDir.clear()
-                    ticksSinceFull = 0
+                    lastFullAtMs = now
                     fastDirs = parsed.filter { (_, z) -> isCpuOrGpu(z.name) }.map { it.first }
-                } else {
-                    ticksSinceFull++
                 }
                 parsed.forEach { (dir, z) -> zonesByDir[dir] = z }
             } else {
                 rootState = RootState.DENIED
                 lastDeniedAtMs = now
-                ticksSinceFull = Int.MAX_VALUE
+                lastFullAtMs = 0L
             }
         }
 

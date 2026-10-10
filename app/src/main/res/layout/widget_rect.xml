@@ -2,7 +2,7 @@
 <!--
   3 x 2 widget. A 3 x 2 on this phone's launcher is about 276 x 187 dp. Nothing is clickable except the refresh button (w_refresh).
   left  = four equal rings (72 dp), 2 x 2: battery, current / RAM, CPU clock. Each shows a small label, a value and a small line.
-  right = top apps (header with refresh button, 5 lines), storage bar, CPU and GPU temperatures
+  right = top apps (big refresh button, label, 3 lines), storage bar, CPU and GPU temperatures
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/w_root"
@@ -216,10 +216,29 @@
         android:layout_weight="1"
         android:orientation="vertical">
 
-        <!-- Header: label, age of the data, refresh button -->
+        <!-- Refresh: a big button, the only tappable part of the widget -->
+        <FrameLayout
+            android:id="@+id/w_refresh"
+            android:layout_width="match_parent"
+            android:layout_height="38dp"
+            android:background="@drawable/btn_refresh">
+            <TextView
+                android:id="@+id/w_refresh_text"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:fontFamily="sans-serif-medium"
+                android:gravity="center"
+                android:includeFontPadding="false"
+                android:text="Refresh"
+                android:textColor="#FF07130E"
+                android:textSize="13sp" />
+        </FrameLayout>
+
+        <!-- Label and age of the data -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="7dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
             <TextView
@@ -228,7 +247,7 @@
                 android:fontFamily="sans-serif-medium"
                 android:includeFontPadding="false"
                 android:letterSpacing="0.1"
-                android:text="TOP"
+                android:text="TOP APPS"
                 android:textColor="@color/text_label"
                 android:textSize="7.5sp" />
             <TextView
@@ -242,22 +261,6 @@
                 android:text=""
                 android:textColor="@color/text_dim"
                 android:textSize="7.5sp" />
-            <FrameLayout
-                android:id="@+id/w_refresh"
-                android:layout_width="26dp"
-                android:layout_height="19dp"
-                android:background="@drawable/btn_refresh">
-                <TextView
-                    android:id="@+id/w_refresh_text"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:fontFamily="sans-serif-medium"
-                    android:gravity="center"
-                    android:includeFontPadding="false"
-                    android:text="↻"
-                    android:textColor="#FF07130E"
-                    android:textSize="14sp" />
-            </FrameLayout>
         </LinearLayout>
 
         <!-- Shown instead of the five lines when there is no list yet (Tap refresh, Shizuku off ...) -->
@@ -377,80 +380,6 @@
                 android:textSize="10sp" />
             <TextView
                 android:id="@+id/w_app3_mb"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="3dp"
-                android:includeFontPadding="false"
-                android:text=""
-                android:textColor="@color/text_label"
-                android:textSize="9sp" />
-        </LinearLayout>
-        <LinearLayout
-            android:id="@+id/w_app4_row"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-            <TextView
-                android:id="@+id/w_app4_rank"
-                android:layout_width="8dp"
-                android:layout_height="wrap_content"
-                android:includeFontPadding="false"
-                android:text=""
-                android:textColor="@color/text_dim"
-                android:textSize="7sp" />
-            <TextView
-                android:id="@+id/w_app4_name"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:ellipsize="end"
-                android:fontFamily="sans-serif-medium"
-                android:includeFontPadding="false"
-                android:singleLine="true"
-                android:text=""
-                android:textColor="@color/text_primary"
-                android:textSize="10sp" />
-            <TextView
-                android:id="@+id/w_app4_mb"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="3dp"
-                android:includeFontPadding="false"
-                android:text=""
-                android:textColor="@color/text_label"
-                android:textSize="9sp" />
-        </LinearLayout>
-        <LinearLayout
-            android:id="@+id/w_app5_row"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-            <TextView
-                android:id="@+id/w_app5_rank"
-                android:layout_width="8dp"
-                android:layout_height="wrap_content"
-                android:includeFontPadding="false"
-                android:text=""
-                android:textColor="@color/text_dim"
-                android:textSize="7sp" />
-            <TextView
-                android:id="@+id/w_app5_name"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:ellipsize="end"
-                android:fontFamily="sans-serif-medium"
-                android:includeFontPadding="false"
-                android:singleLine="true"
-                android:text=""
-                android:textColor="@color/text_primary"
-                android:textSize="10sp" />
-            <TextView
-                android:id="@+id/w_app5_mb"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="3dp"
