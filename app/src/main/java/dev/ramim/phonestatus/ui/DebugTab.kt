@@ -129,6 +129,15 @@ fun DebugTab(onOpenHomeDragon: () -> Unit) {
             DetailRow("Top apps source", topApps.source.ifEmpty { "—" })
             DetailRow("Top apps status", if (topApps.busy) "Reading…" else topApps.note.ifEmpty { "OK" })
         }
+        if (topApps.detail.isNotEmpty()) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                topApps.detail,
+                color = Palette.TextLabel,
+                fontSize = 11.sp,
+                fontFamily = FontFamily.Monospace,
+            )
+        }
         TextButton(onClick = onOpenHomeDragon) {
             Text("Open Home Dragon", color = Palette.Battery)
         }
