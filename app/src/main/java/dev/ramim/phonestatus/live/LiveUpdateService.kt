@@ -1,5 +1,6 @@
 package dev.ramim.phonestatus.live
 
+import android.app.AlarmManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -63,6 +64,7 @@ class LiveUpdateService : Service() {
         val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
         screenOn.value = pm.isInteractive
         LiveDebug.setScreenOn(screenOn.value)
+        LiveDebug.setServiceUp(true)
         ForegroundGate.register(this)
         ContextCompat.registerReceiver(
             this,
@@ -145,7 +147,24 @@ class LiveUpdateService : Service() {
             .build()
     }
 
+    /** Swiped away from recents: ask Android to start the live service again in a moment, in case it was stopped with the app. */
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        try {
+            val am = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            val again = PendingIntent.getForegroundService(
+                this,
+                3,
+                Intent(this, LiveUpdateService::class.java),
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+            )
+            am.setAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + 2_000L, again)
+        } catch (_: Exception) {
+        }
+    }
+
     override fun onDestroy() {
+        LiveDebug.setServiceUp(false)
         try {
             unregisterReceiver(screenReceiver)
         } catch (_: Exception) {

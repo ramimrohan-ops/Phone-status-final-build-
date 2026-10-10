@@ -5,26 +5,28 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.os.Bundle
 import android.view.View
 import android.widget.RemoteViews
-import dev.ramim.phonestatus.MainActivity
 import dev.ramim.phonestatus.R
 import dev.ramim.phonestatus.data.BatteryInfo
 import dev.ramim.phonestatus.data.Stats
+import dev.ramim.phonestatus.data.StatsReader
 import dev.ramim.phonestatus.data.ThermalInfo
+import dev.ramim.phonestatus.data.TopApps
+import dev.ramim.phonestatus.live.LiveStats
 import dev.ramim.phonestatus.ui.f1
-import dev.ramim.phonestatus.ui.fmtFreq
 import dev.ramim.phonestatus.ui.fmtMah
-import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
+import kotlin.math.max
 import kotlin.math.roundToInt
 
-/** Builds the widget's RemoteViews and pushes them straight to the launcher. */
+/**
+ * Builds the widget's RemoteViews and pushes them straight to the launcher.
+ * Only the Refresh button is clickable; a tap anywhere else does nothing.
+ */
 object WidgetRenderer {
 
-    // LED thresholds
+    // LED / ring thresholds
     private const val CHIP_WARM_C = 60f
     private const val CHIP_HOT_C = 75f
     private const val BATT_WARM_C = 38f
@@ -32,7 +34,26 @@ object WidgetRenderer {
     private const val DRAIN_BUSY_MA = 1500
     private const val DRAIN_HIGH_MA = 2500
 
-    private enum class Kind { SMALL, WIDE, TALL }
+    // Full circle of the current ring
+    private const val RING_FULL_DRAW_MA = 3000f
+    private const val RING_FULL_CHARGE_MA = 6000f
+
+    private const val MINT = 0xFF3DF5A7.toInt()
+    private const val AMBER = 0xFFFFB454.toInt()
+    private const val RED = 0xFFFF5470.toInt()
+    private const val BLUE = 0xFF7CC4FF.toInt()
+    private const val GREY = 0xFF4A5270.toInt()
+
+    /** Highest CPU clock seen so far (at least 2 GHz), the full circle of the small CPU ring. */
+    @Volatile private var cpuMaxSeenMhz = 2000
+
+    private class AppRow(val row: Int, val rank: Int, val name: Int, val mb: Int)
+
+    private val appRows = listOf(
+        AppRow(R.id.w_app1_row, R.id.w_app1_rank, R.id.w_app1_name, R.id.w_app1_mb),
+        AppRow(R.id.w_app2_row, R.id.w_app2_rank, R.id.w_app2_name, R.id.w_app2_mb),
+        AppRow(R.id.w_app3_row, R.id.w_app3_rank, R.id.w_app3_name, R.id.w_app3_mb),
+    )
 
     fun widgetIds(ctx: Context): IntArray =
         AppWidgetManager.getInstance(ctx)
@@ -40,103 +61,145 @@ object WidgetRenderer {
 
     fun renderAll(ctx: Context, stats: Stats, thermal: ThermalInfo) {
         val mgr = AppWidgetManager.getInstance(ctx)
-        val time = SimpleDateFormat("HH:mm:ss", Locale.US).format(Date())
-        for (id in widgetIds(ctx)) {
-            mgr.updateAppWidget(id, build(ctx, mgr.getAppWidgetOptions(id), stats, thermal, time))
-        }
+        val ids = widgetIds(ctx)
+        if (ids.isEmpty()) return
+        val views = build(ctx, stats, thermal)
+        for (id in ids) mgr.updateAppWidget(id, views)
     }
 
-    private fun build(
-        ctx: Context,
-        options: Bundle,
-        s: Stats,
-        t: ThermalInfo,
-        time: String,
-    ): RemoteViews {
-        val minW = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
-        val minH = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
-        val kind = when {
-            minW in 1..199 -> Kind.SMALL
-            minH >= 150 -> Kind.TALL
-            else -> Kind.WIDE
-        }
-        val layout = when (kind) {
-            Kind.SMALL -> R.layout.widget_small
-            Kind.WIDE -> R.layout.widget_wide
-            Kind.TALL -> R.layout.widget_tall
-        }
+    /** Draws once with fresh numbers, outside the one-second loop (used by the Refresh button). */
+    fun redrawNow(ctx: Context) {
+        renderAll(ctx, StatsReader.readAll(ctx), LiveStats.thermal ?: ThermalInfo())
+    }
 
-        val v = RemoteViews(ctx.packageName, layout)
-        v.setOnClickPendingIntent(R.id.w_root, openApp(ctx))
-        bindBattery(v, s.battery)
+    private fun build(ctx: Context, s: Stats, t: ThermalInfo): RemoteViews {
+        val v = RemoteViews(ctx.packageName, R.layout.widget_rect)
+        val density = ctx.resources.displayMetrics.density
+        val big = (70 * density).roundToInt()
+        val small = (30 * density).roundToInt()
+        val b = s.battery
 
-        val cpuText = t.cpuC?.let { "${it.roundToInt()}°C" } ?: "—"
+        // Refresh button: the only thing on the widget that reacts to a tap.
+        val ta = TopApps.state.value
+        v.setOnClickPendingIntent(R.id.w_refresh, refreshIntent(ctx))
+        v.setTextViewText(R.id.w_refresh_text, if (ta.busy) "Reading…" else "↻ Refresh")
+
+        // ---- Battery ring ----
+        val battColor = batteryColor(b)
+        v.setImageViewBitmap(R.id.w_batt_ring, Rings.arc(big, b.level / 100f, battColor, 0.075f))
+        v.setTextViewText(R.id.w_battery_pct, "${b.level}")
+        v.setTextViewText(R.id.w_batt_temp, "${f1(b.tempC)}°")
+        v.setInt(R.id.w_led_batt, "setBackgroundResource", ledFor(battColor))
+        val cap = b.capacityMah?.let { fmtMah(it) }
+        val health = b.healthPct
+        v.setTextViewText(
+            R.id.w_cap_line,
+            when {
+                cap != null && health != null -> "$cap · $health%"
+                cap != null -> cap
+                health != null -> "$health% health"
+                else -> "—"
+            },
+        )
+
+        // ---- Current ring ----
+        val ma = b.currentMa
+        val curColor = currentColor(b)
+        val frac = if (ma == null) 0f else ma / (if (b.charging) RING_FULL_CHARGE_MA else RING_FULL_DRAW_MA)
+        v.setImageViewBitmap(R.id.w_cur_ring, Rings.arc(big, frac, curColor, 0.075f))
+        v.setTextViewText(R.id.w_cur_val, ma?.toString() ?: "—")
+        v.setTextViewText(R.id.w_cur_arrow, if (b.charging) "▲" else "▼")
+        v.setTextColor(R.id.w_cur_arrow, curColor)
+        v.setInt(R.id.w_led_cur, "setBackgroundResource", currentLed(b))
+        v.setTextViewText(R.id.w_volt, String.format(Locale.US, "%.2f V", b.voltageV))
+
+        // ---- RAM / storage ----
         val ramPct = (s.ram.fraction * 100).roundToInt()
         val stoPct = (s.storage.fraction * 100).roundToInt()
-        val hz = s.display.currentHz.roundToInt()
+        v.setTextViewText(
+            R.id.w_ram_val,
+            String.format(Locale.US, "%.1f / %.1f GB", s.ram.usedBytes / GIB, s.ram.totalBytes / GIB),
+        )
+        v.setProgressBar(R.id.w_ram_bar, 100, ramPct, false)
+        v.setTextViewText(
+            R.id.w_sto_val,
+            "${(s.storage.usedBytes / GB).roundToInt()} / ${(s.storage.totalBytes / GB).roundToInt()} GB",
+        )
+        v.setProgressBar(R.id.w_sto_bar, 100, stoPct, false)
 
-        if (kind == Kind.SMALL) {
-            v.setTextViewText(R.id.w_line1, "RAM $ramPct% · SSD $stoPct%")
-            v.setTextViewText(R.id.w_line2, "CPU $cpuText · $hz Hz")
-        } else {
-            v.setTextViewText(R.id.w_batt_temp, "${f1(s.battery.tempC)} °C")
-            if (kind == Kind.WIDE) v.setTextViewText(R.id.w_updated, "Live $time")
-            v.setTextViewText(R.id.w_ram_val, "$ramPct%")
-            v.setProgressBar(R.id.w_ram_bar, 100, ramPct, false)
-            v.setTextViewText(R.id.w_sto_val, "$stoPct%")
-            v.setProgressBar(R.id.w_sto_bar, 100, stoPct, false)
-            v.setTextViewText(R.id.w_hz_cpu, "$hz Hz · CPU $cpuText")
-
-            val cpuMhz = t.freq.cpuPeakMhz
-            if (kind == Kind.WIDE) {
-                v.setTextViewText(R.id.w_cpu_freq_line, "CPU ${fmtFreq(cpuMhz, 1)}")
-                v.setTextViewText(R.id.w_gpu_freq_line, "GPU ${t.gpuC?.let { "${it.roundToInt()}°C" } ?: "—"}")
-            }
-
-            if (kind == Kind.TALL) {
-                // Tall layout labels each cell itself, so the values carry no prefix.
-                v.setTextViewText(R.id.w_hz_cpu, "$hz Hz")
-                v.setTextViewText(R.id.w_cpu_line, tempClockText(t.cpuC, cpuMhz))
-                v.setTextViewText(R.id.w_gpu_line, t.gpuC?.let { "${it.roundToInt()}°C" } ?: "—")
-
-                // LED dots: green = fine, amber = busy / warm, red = high, grey = can't be read.
-                v.setInt(R.id.w_led_batt, "setBackgroundResource", batteryLed(s.battery))
-                v.setInt(R.id.w_led_cpu, "setBackgroundResource", tempLed(t.cpuC))
-                v.setInt(R.id.w_led_gpu, "setBackgroundResource", tempLed(t.gpuC))
-
-                val bat = s.battery
-                v.setTextViewText(R.id.w_capacity, bat.capacityMah?.let { "~${fmtMah(it)}" } ?: "—")
-                val health = bat.healthPct
-                val cycles = bat.cycleCount
-                v.setTextViewText(
-                    R.id.w_cap_sub,
-                    when {
-                        health != null && cycles != null -> "$health% · $cycles cyc"
-                        health != null -> "$health% health"
-                        cycles != null -> "$cycles cycles"
-                        else -> ""
-                    },
-                )
-                v.setTextViewText(
-                    R.id.w_current,
-                    s.battery.currentMa?.let { (if (s.battery.charging) "↑" else "↓") + "$it mA" } ?: "—",
-                )
-                v.setTextViewText(
-                    R.id.w_voltage,
-                    String.format(Locale.US, "%.2f V", s.battery.voltageV),
-                )
+        // ---- Top apps ----
+        v.setTextViewText(R.id.w_apps_age, TopApps.ageText(ta.at))
+        for ((i, r) in appRows.withIndex()) {
+            val app = ta.apps.getOrNull(i)
+            when {
+                app != null -> {
+                    v.setViewVisibility(r.row, View.VISIBLE)
+                    v.setTextViewText(r.rank, "${i + 1}")
+                    v.setTextViewText(r.name, app.label)
+                    v.setTextViewText(r.mb, TopApps.fmtMb(app.mb))
+                }
+                i == 0 -> {
+                    v.setViewVisibility(r.row, View.VISIBLE)
+                    v.setTextViewText(r.rank, "")
+                    v.setTextViewText(r.name, if (ta.busy) "Reading…" else ta.note)
+                    v.setTextViewText(r.mb, "")
+                }
+                else -> v.setViewVisibility(r.row, View.INVISIBLE)
             }
         }
+
+        // ---- CPU ring, CPU and GPU ----
+        val mhz = t.freq.cpuPeakMhz
+        if (mhz != null) cpuMaxSeenMhz = max(cpuMaxSeenMhz, mhz)
+        v.setImageViewBitmap(
+            R.id.w_cpu_ring,
+            Rings.arc(small, if (mhz == null) 0f else mhz / cpuMaxSeenMhz.toFloat(), MINT, 0.11f),
+        )
+        v.setTextViewText(R.id.w_cpu_ghz, if (mhz == null) "—" else String.format(Locale.US, "%.1f", mhz / 1000f))
+        v.setTextViewText(R.id.w_cpu_temp, t.cpuC?.let { "${it.roundToInt()}°C" } ?: "—")
+        v.setTextViewText(R.id.w_gpu_temp, t.gpuC?.let { "${it.roundToInt()}°C" } ?: "—")
+        v.setInt(R.id.w_led_cpu, "setBackgroundResource", tempLed(t.cpuC))
+        v.setInt(R.id.w_led_gpu, "setBackgroundResource", tempLed(t.gpuC))
         return v
     }
 
-    /** "43°C · 2.21 GHz". Parts the phone can't read are left out, "—" if nothing is readable. */
-    private fun tempClockText(celsius: Float?, mhz: Int?): String {
-        val parts = listOfNotNull(
-            celsius?.let { "${it.roundToInt()}°C" },
-            mhz?.let { fmtFreq(it) },
-        )
-        return if (parts.isEmpty()) "—" else parts.joinToString(" · ")
+    private const val GIB = 1024.0 * 1024.0 * 1024.0
+    private const val GB = 1000.0 * 1000.0 * 1000.0
+
+    // ---- colours ---------------------------------------------------------------------------------------------------
+
+    /** Battery: by temperature, and red when nearly empty on battery. */
+    private fun batteryColor(b: BatteryInfo): Int = when {
+        b.tempC >= BATT_HOT_C || (!b.charging && b.level <= 15) -> RED
+        b.tempC >= BATT_WARM_C -> AMBER
+        else -> MINT
+    }
+
+    /** Current ring: blue while drawing little, amber when busy, red when high; amber while charging. */
+    private fun currentColor(b: BatteryInfo): Int {
+        val ma = b.currentMa ?: return GREY
+        return when {
+            b.charging -> AMBER
+            ma >= DRAIN_HIGH_MA -> RED
+            ma >= DRAIN_BUSY_MA -> AMBER
+            else -> BLUE
+        }
+    }
+
+    private fun currentLed(b: BatteryInfo): Int {
+        val ma = b.currentMa ?: return R.drawable.led_off
+        return when {
+            b.charging -> if (ma > DRAIN_HIGH_MA) R.drawable.led_warn else R.drawable.led_ok
+            ma >= DRAIN_HIGH_MA -> R.drawable.led_hot
+            ma >= DRAIN_BUSY_MA -> R.drawable.led_warn
+            else -> R.drawable.led_ok
+        }
+    }
+
+    private fun ledFor(color: Int): Int = when (color) {
+        RED -> R.drawable.led_hot
+        AMBER -> R.drawable.led_warn
+        else -> R.drawable.led_ok
     }
 
     private fun tempLed(c: Float?): Int = when {
@@ -146,33 +209,11 @@ object WidgetRenderer {
         else -> R.drawable.led_ok
     }
 
-    /** Worst of: battery heat, low charge while unplugged, heavy drain while unplugged. */
-    private fun batteryLed(b: BatteryInfo): Int {
-        val drain = if (b.charging) 0 else (b.currentMa ?: 0)
-        val low = !b.charging && b.level <= 15
-        val lowish = !b.charging && b.level <= 30
-        return when {
-            b.tempC >= BATT_HOT_C || low || drain >= DRAIN_HIGH_MA -> R.drawable.led_hot
-            b.tempC >= BATT_WARM_C || lowish || drain >= DRAIN_BUSY_MA -> R.drawable.led_warn
-            else -> R.drawable.led_ok
-        }
-    }
-
-    private fun bindBattery(v: RemoteViews, b: BatteryInfo) {
-        val low = b.level <= 15 && !b.charging
-        v.setTextViewText(R.id.w_battery_pct, "${b.level}%")
-        v.setViewVisibility(R.id.w_charging, if (b.charging) View.VISIBLE else View.GONE)
-        v.setProgressBar(R.id.w_battery_bar, 100, b.level, false)
-        v.setProgressBar(R.id.w_battery_bar_low, 100, b.level, false)
-        v.setViewVisibility(R.id.w_battery_bar, if (low) View.GONE else View.VISIBLE)
-        v.setViewVisibility(R.id.w_battery_bar_low, if (low) View.VISIBLE else View.GONE)
-    }
-
-    private fun openApp(ctx: Context): PendingIntent =
-        PendingIntent.getActivity(
+    private fun refreshIntent(ctx: Context): PendingIntent =
+        PendingIntent.getBroadcast(
             ctx,
-            0,
-            Intent(ctx, MainActivity::class.java),
+            7,
+            Intent(ctx, RefreshReceiver::class.java).setAction(TopApps.ACTION_REFRESH),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
 }

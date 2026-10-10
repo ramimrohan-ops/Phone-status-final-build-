@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -27,20 +28,19 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.ramim.phonestatus.data.BatteryInfo
@@ -50,39 +50,20 @@ import dev.ramim.phonestatus.data.RootState
 import dev.ramim.phonestatus.data.Stats
 import dev.ramim.phonestatus.data.StorageInfo
 import dev.ramim.phonestatus.data.ThermalInfo
-import kotlin.math.abs
+import dev.ramim.phonestatus.data.TopApps
+import dev.ramim.phonestatus.data.TopAppsState
+import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
-
-/** Counts real frames the screen shows, so you see 120 / 90 / 60 Hz as it actually runs. */
-@Composable
-fun rememberLiveHz(): State<Float> {
-    val hz = remember { mutableFloatStateOf(0f) }
-    LaunchedEffect(Unit) {
-        var windowStart = 0L
-        var frames = 0
-        while (true) {
-            val t = withFrameNanos { it }
-            if (windowStart == 0L) {
-                windowStart = t
-            } else {
-                frames++
-                val dt = t - windowStart
-                if (dt >= 1_000_000_000L) {
-                    hz.floatValue = frames * 1_000_000_000f / dt
-                    frames = 0
-                    windowStart = t
-                }
-            }
-        }
-    }
-    return hz
-}
 
 @Composable
 fun Dashboard(
     stats: Stats,
     thermal: ThermalInfo,
-    liveHz: Float,
+    topApps: TopAppsState,
+    onRefreshApps: () -> Unit,
+    onAllowShizuku: () -> Unit,
+    batteryExempt: Boolean,
+    onAllowBackground: () -> Unit,
     onAddWidget: () -> Unit,
     onRetryRoot: () -> Unit,
     smartPause: Boolean,
@@ -97,7 +78,10 @@ fun Dashboard(
     ) {
         Box(Modifier.weight(1f).fillMaxWidth()) {
             if (tab == 0) {
-                StatusTab(stats, thermal, liveHz, onAddWidget, onRetryRoot, smartPause, onOpenHomeDragon)
+                StatusTab(
+                    stats, thermal, topApps, onRefreshApps, onAllowShizuku, batteryExempt, onAllowBackground,
+                    onAddWidget, onRetryRoot, smartPause, onOpenHomeDragon,
+                )
             } else {
                 DebugTab(onOpenHomeDragon)
             }
@@ -153,7 +137,11 @@ private fun TabItem(text: String, selected: Boolean, modifier: Modifier, onClick
 private fun StatusTab(
     stats: Stats,
     thermal: ThermalInfo,
-    liveHz: Float,
+    topApps: TopAppsState,
+    onRefreshApps: () -> Unit,
+    onAllowShizuku: () -> Unit,
+    batteryExempt: Boolean,
+    onAllowBackground: () -> Unit,
     onAddWidget: () -> Unit,
     onRetryRoot: () -> Unit,
     smartPause: Boolean,
@@ -176,7 +164,11 @@ private fun StatusTab(
         Spacer(Modifier.height(28.dp))
         Hairline()
         Spacer(Modifier.height(24.dp))
-        DisplaySection(stats.display, liveHz)
+        TopAppsSection(topApps, onRefreshApps, onAllowShizuku)
+        Spacer(Modifier.height(28.dp))
+        Hairline()
+        Spacer(Modifier.height(24.dp))
+        DisplaySection(stats.display)
         Spacer(Modifier.height(28.dp))
         Hairline()
         Spacer(Modifier.height(24.dp))
@@ -185,6 +177,10 @@ private fun StatusTab(
         Hairline()
         Spacer(Modifier.height(24.dp))
         SmartPauseSection(smartPause, onOpenHomeDragon)
+        Spacer(Modifier.height(28.dp))
+        Hairline()
+        Spacer(Modifier.height(24.dp))
+        BackgroundSection(batteryExempt, onAllowBackground)
         Spacer(Modifier.height(28.dp))
         OutlinedButton(
             onClick = onAddWidget,
@@ -331,50 +327,104 @@ private fun UsageRow(name: String, fraction: Float, detail: String, sub: String?
 }
 
 @Composable
-private fun DisplaySection(d: DisplayInfo, liveHz: Float) {
+private fun DisplaySection(d: DisplayInfo) {
     Label("Display")
-    Spacer(Modifier.height(6.dp))
-    Row(verticalAlignment = Alignment.Bottom) {
-        Text(
-            if (liveHz > 0f) "${liveHz.roundToInt()}" else "…",
-            color = Palette.TextPrimary,
-            fontSize = 48.sp,
-            fontWeight = FontWeight.Light,
-        )
-        Text(
-            " Hz",
-            color = Palette.TextLabel,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Light,
-            modifier = Modifier.padding(bottom = 10.dp),
-        )
-        Spacer(Modifier.weight(1f))
-        Text(
-            "live, measured",
-            color = Palette.TextLabel,
-            fontSize = 12.sp,
-            modifier = Modifier.padding(bottom = 10.dp),
-        )
-    }
-    Spacer(Modifier.height(10.dp))
+    Spacer(Modifier.height(12.dp))
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        DetailRow("System mode", "${d.currentHz.roundToInt()} Hz")
         DetailRow("Resolution", if (d.width > 0) "${d.width}×${d.height}" else "—")
         DetailRow("Density", if (d.dpi > 0) "${d.dpi} dpi" else "—")
     }
-    if (d.supportedHz.isNotEmpty()) {
-        Spacer(Modifier.height(14.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            d.supportedHz.forEach { hz ->
-                val current = abs(hz - d.currentHz) < 1f
-                Text(
-                    "$hz",
-                    color = if (current) Palette.Battery else Palette.TextLabel,
-                    fontSize = 15.sp,
-                    fontWeight = if (current) FontWeight.Medium else FontWeight.Normal,
-                )
+}
+
+/** The five apps using the most memory right now. Read once per tap, never automatically. */
+@Composable
+private fun TopAppsSection(s: TopAppsState, onRefresh: () -> Unit, onAllowShizuku: () -> Unit) {
+    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(s.at) {
+        while (true) {
+            now = System.currentTimeMillis()
+            delay(1_000)
+        }
+    }
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Label("Top apps · RAM")
+        TextButton(onClick = onRefresh, enabled = !s.busy) {
+            Text(if (s.busy) "Reading…" else "↻ Refresh", color = if (s.busy) Palette.TextLabel else Palette.Battery)
+        }
+    }
+    Spacer(Modifier.height(6.dp))
+    if (s.apps.isEmpty()) {
+        Text(
+            if (s.busy) "Reading…" else s.note.ifEmpty { "Tap Refresh" },
+            color = Palette.TextLabel,
+            fontSize = 13.sp,
+        )
+    } else {
+        Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+            s.apps.forEachIndexed { i, a ->
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("${i + 1}", color = Palette.TextLabel, fontSize = 12.sp, modifier = Modifier.width(22.dp))
+                    Text(
+                        a.label,
+                        color = Palette.TextPrimary,
+                        fontSize = 15.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Text(TopApps.fmtMb(a.mb), color = Palette.TextLabel, fontSize = 14.sp)
+                }
             }
-            Text("Hz", color = Palette.TextLabel, fontSize = 12.sp)
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "Read ${TopApps.ageText(s.at, now)} ago · via ${s.source}",
+            color = Palette.TextLabel,
+            fontSize = 11.sp,
+        )
+    }
+    if (s.needShizukuPermission) {
+        TextButton(onClick = onAllowShizuku) {
+            Text("Allow Phone Status in Shizuku", color = Palette.Battery)
+        }
+    }
+}
+
+@Composable
+private fun BackgroundSection(exempt: Boolean, onAllow: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Label("Run in background")
+        Text(
+            if (exempt) "ON" else "OFF",
+            color = if (exempt) Palette.Battery else Palette.TextLabel,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Medium,
+            letterSpacing = 1.4.sp,
+        )
+    }
+    Spacer(Modifier.height(8.dp))
+    Text(
+        text = if (exempt) {
+            "Android will not stop the live widget when you close this app. On HyperOS also keep Autostart on " +
+                "and lock the app in the recents screen."
+        } else {
+            "Let Phone Status keep running when this app is closed. Tap Allow and choose \"Allow\". On HyperOS also turn " +
+                "Autostart on and set Battery saver to No restrictions for this app."
+        },
+        color = Palette.TextLabel,
+        fontSize = 13.sp,
+    )
+    if (!exempt) {
+        TextButton(onClick = onAllow) {
+            Text("Allow", color = Palette.Battery)
         }
     }
 }

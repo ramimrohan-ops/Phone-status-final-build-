@@ -2,5 +2,5 @@
 <resources>
     <string name="app_name">Phone Status</string>
     <string name="widget_label">Phone Status</string>
-    <string name="widget_description">Battery, RAM, storage, refresh rate and temperature, live every second.</string>
+    <string name="widget_description">Battery, current, RAM, top apps, storage and CPU/GPU, live every second on the home screen.</string>
 </resources>

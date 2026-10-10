@@ -6,9 +6,19 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- Only usable after it is granted once from a shell (pm grant); lets the Refresh button read the memory report. -->
+    <uses-permission
+        android:name="android.permission.DUMP"
+        tools:ignore="ProtectedPermissions" />
+    <!-- To show the real names of the apps in the top-apps list. -->
+    <uses-permission
+        android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
 
     <queries>
         <package android:name="com.ramim.homedragon" />
+        <package android:name="moe.shizuku.privileged.api" />
     </queries>
 
     <application
@@ -48,6 +58,28 @@
                 android:value="Refreshes the home-screen widget every second" />
         </service>
 
+
+        <!-- Home Dragon's "home screen on top / not" message; wakes this app even when it is closed. -->
+        <receiver
+            android:name=".live.HomeStateReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.ramim.homedragon.HOME_STATE" />
+            </intent-filter>
+        </receiver>
+
+        <!-- The widget's Refresh button. -->
+        <receiver
+            android:name=".widget.RefreshReceiver"
+            android:exported="false" />
+
+        <provider
+            android:name="rikka.shizuku.ShizukuProvider"
+            android:authorities="${applicationId}.shizuku"
+            android:enabled="true"
+            android:exported="true"
+            android:multiprocess="false"
+            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
 
         <receiver
             android:name=".live.BootReceiver"

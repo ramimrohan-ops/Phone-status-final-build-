@@ -3,6 +3,7 @@ package dev.ramim.phonestatus.ui
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.os.PowerManager
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -37,6 +38,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.ramim.phonestatus.live.ForegroundGate
 import dev.ramim.phonestatus.live.LiveDebug
 import dev.ramim.phonestatus.live.SwitchEvent
+import dev.ramim.phonestatus.data.TopApps
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -55,6 +57,8 @@ fun DebugTab(onOpenHomeDragon: () -> Unit) {
     val rate by LiveDebug.rate.collectAsStateWithLifecycle()
     val lastUpdate by LiveDebug.lastUpdateAt.collectAsStateWithLifecycle()
     val screenOn by LiveDebug.screenOn.collectAsStateWithLifecycle()
+    val serviceUp by LiveDebug.serviceUp.collectAsStateWithLifecycle()
+    val topApps by TopApps.state.collectAsStateWithLifecycle()
 
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {
@@ -64,6 +68,11 @@ fun DebugTab(onOpenHomeDragon: () -> Unit) {
         }
     }
 
+    val exempt = try {
+        (ctx.getSystemService(Context.POWER_SERVICE) as PowerManager).isIgnoringBatteryOptimizations(ctx.packageName) && now > 0L
+    } catch (_: Exception) {
+        false
+    }
     val updating = lastUpdate != 0L && now - lastUpdate < 3_000L
     val liveRate = if (updating) String.format(Locale.US, "%.1f / s", rate) else "0 / s (not updating)"
 
@@ -107,6 +116,18 @@ fun DebugTab(onOpenHomeDragon: () -> Unit) {
             DetailRow("Widget updates", liveRate)
             DetailRow("Last update", if (lastUpdate == 0L) "never" else ago(now, lastUpdate))
             DetailRow("Screen", if (screenOn) "On" else "Off")
+            DetailRow(
+                "Live service",
+                if (serviceUp) "Running" else "Not running",
+                if (serviceUp) Palette.Battery else Palette.TempWarm,
+            )
+            DetailRow(
+                "Battery setting",
+                if (exempt) "No restrictions" else "Optimised (Android may stop the app)",
+                if (exempt) Palette.Battery else Palette.TempWarm,
+            )
+            DetailRow("Top apps source", topApps.source.ifEmpty { "—" })
+            DetailRow("Top apps status", if (topApps.busy) "Reading…" else topApps.note.ifEmpty { "OK" })
         }
         TextButton(onClick = onOpenHomeDragon) {
             Text("Open Home Dragon", color = Palette.Battery)

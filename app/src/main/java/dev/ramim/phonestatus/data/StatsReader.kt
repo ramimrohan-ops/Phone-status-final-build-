@@ -12,7 +12,6 @@ import android.os.StatFs
 import android.view.Display
 import java.io.File
 import kotlin.math.abs
-import kotlin.math.roundToInt
 
 /** Reads everything that does NOT need root. All calls are cheap and safe to poll. */
 object StatsReader {
@@ -135,15 +134,7 @@ object StatsReader {
         val dm = ctx.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
         val d = dm.getDisplay(Display.DEFAULT_DISPLAY) ?: return DisplayInfo()
         val mode = d.mode
-        // Only list the refresh rates available at the current resolution.
-        val rates = d.supportedModes
-            .filter { it.physicalWidth == mode.physicalWidth && it.physicalHeight == mode.physicalHeight }
-            .map { it.refreshRate.roundToInt() }
-            .distinct()
-            .sorted()
         return DisplayInfo(
-            currentHz = d.refreshRate,
-            supportedHz = rates,
             width = mode.physicalWidth,
             height = mode.physicalHeight,
             dpi = ctx.resources.displayMetrics.densityDpi,

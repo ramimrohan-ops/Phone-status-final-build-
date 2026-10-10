@@ -14,6 +14,7 @@
     <color name="led_warn">#FFFFB454</color>
     <color name="led_hot">#FFFF5470</color>
     <color name="led_off">#FF4A5270</color>
+    <color name="text_dim">#FF566080</color>
     <color name="text_label">#FF7B839F</color>
     <color name="bar_soft_white">#FFD9DEEE</color>
 </resources>

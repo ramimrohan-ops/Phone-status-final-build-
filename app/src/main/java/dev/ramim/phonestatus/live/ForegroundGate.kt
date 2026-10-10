@@ -1,10 +1,7 @@
 package dev.ramim.phonestatus.live
 
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
-import androidx.core.content.ContextCompat
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -52,16 +49,18 @@ object ForegroundGate {
     /** Newest first. */
     val events: StateFlow<List<SwitchEvent>> = _events.asStateFlow()
 
-    private var registered = false
+    private var asked = false
 
-    private val receiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            if (intent.action != ACTION) return
-            val home = intent.getBooleanExtra("home", false)
-            val seq = intent.getLongExtra("seq", 0L)
-            onSignal(home, intent.getStringExtra("why") ?: "")
-            reply(context, seq, home)
-        }
+    /**
+     * Handles one HOME_STATE message. It arrives through [HomeStateReceiver], which is declared in the manifest, so Home
+     * Dragon can reach this app even when it is closed or its process was stopped.
+     */
+    fun handle(ctx: Context, intent: Intent) {
+        if (intent.action != ACTION) return
+        val home = intent.getBooleanExtra("home", false)
+        val seq = intent.getLongExtra("seq", 0L)
+        onSignal(home, intent.getStringExtra("why") ?: "")
+        reply(ctx, seq, home)
     }
 
     /** Tells Home Dragon that message number [seq] arrived and which state it carried. */
@@ -87,21 +86,11 @@ object ForegroundGate {
         }
     }
 
-    /** Starts listening for Home Dragon's messages. Safe to call again; the app context lives as long as the process. */
+    /** Asks Home Dragon for the state once per process start. Safe to call again. */
     @Synchronized
     fun register(ctx: Context) {
-        if (registered) return
-        try {
-            ContextCompat.registerReceiver(
-                ctx.applicationContext,
-                receiver,
-                IntentFilter(ACTION),
-                ContextCompat.RECEIVER_EXPORTED,
-            )
-            registered = true
-        } catch (_: Exception) {
-            return
-        }
+        if (asked) return
+        asked = true
         ask(ctx)
     }
 
@@ -137,6 +126,15 @@ object LiveDebug {
 
     private val _screenOn = MutableStateFlow(true)
     val screenOn: StateFlow<Boolean> = _screenOn.asStateFlow()
+
+    private val _serviceUp = MutableStateFlow(false)
+
+    /** True while the live service is alive. */
+    val serviceUp: StateFlow<Boolean> = _serviceUp.asStateFlow()
+
+    fun setServiceUp(value: Boolean) {
+        _serviceUp.value = value
+    }
 
     private val _lastUpdateAt = MutableStateFlow(0L)
     val lastUpdateAt: StateFlow<Long> = _lastUpdateAt.asStateFlow()

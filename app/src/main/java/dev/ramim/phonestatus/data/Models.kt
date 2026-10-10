@@ -45,8 +45,6 @@ data class StorageInfo(
 }
 
 data class DisplayInfo(
-    val currentHz: Float = 60f,
-    val supportedHz: List<Int> = emptyList(),
     val width: Int = 0,
     val height: Int = 0,
     val dpi: Int = 0,
