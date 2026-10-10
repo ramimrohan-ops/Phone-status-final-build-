@@ -24,6 +24,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.ramim.phonestatus.data.ShizukuAccess
 import dev.ramim.phonestatus.data.StatsViewModel
 import dev.ramim.phonestatus.data.TopApps
 import dev.ramim.phonestatus.live.ForegroundGate
@@ -73,6 +74,7 @@ class MainActivity : ComponentActivity() {
                     thermal = thermal,
                     topApps = topApps,
                     onRefreshApps = { lifecycleScope.launch { TopApps.refresh(applicationContext) } },
+                    onAllowShizuku = { ShizukuAccess.requestPermission() },
                     batteryExempt = batteryExempt,
                     onAllowBackground = { askBackground() },
                     onAddWidget = { requestPinWidget(this) },

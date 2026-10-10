@@ -61,6 +61,7 @@ fun Dashboard(
     thermal: ThermalInfo,
     topApps: TopAppsState,
     onRefreshApps: () -> Unit,
+    onAllowShizuku: () -> Unit,
     batteryExempt: Boolean,
     onAllowBackground: () -> Unit,
     onAddWidget: () -> Unit,
@@ -78,7 +79,7 @@ fun Dashboard(
         Box(Modifier.weight(1f).fillMaxWidth()) {
             if (tab == 0) {
                 StatusTab(
-                    stats, thermal, topApps, onRefreshApps, batteryExempt, onAllowBackground,
+                    stats, thermal, topApps, onRefreshApps, onAllowShizuku, batteryExempt, onAllowBackground,
                     onAddWidget, onRetryRoot, smartPause, onOpenHomeDragon,
                 )
             } else {
@@ -138,6 +139,7 @@ private fun StatusTab(
     thermal: ThermalInfo,
     topApps: TopAppsState,
     onRefreshApps: () -> Unit,
+    onAllowShizuku: () -> Unit,
     batteryExempt: Boolean,
     onAllowBackground: () -> Unit,
     onAddWidget: () -> Unit,
@@ -162,7 +164,7 @@ private fun StatusTab(
         Spacer(Modifier.height(28.dp))
         Hairline()
         Spacer(Modifier.height(24.dp))
-        TopAppsSection(topApps, onRefreshApps)
+        TopAppsSection(topApps, onRefreshApps, onAllowShizuku)
         Spacer(Modifier.height(28.dp))
         Hairline()
         Spacer(Modifier.height(24.dp))
@@ -336,7 +338,7 @@ private fun DisplaySection(d: DisplayInfo) {
 
 /** The five apps using the most memory right now. Read once per tap, never automatically. */
 @Composable
-private fun TopAppsSection(s: TopAppsState, onRefresh: () -> Unit) {
+private fun TopAppsSection(s: TopAppsState, onRefresh: () -> Unit, onAllowShizuku: () -> Unit) {
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(s.at) {
         while (true) {
@@ -385,13 +387,21 @@ private fun TopAppsSection(s: TopAppsState, onRefresh: () -> Unit) {
             fontSize = 11.sp,
         )
     }
-    if (s.apps.isEmpty() && !s.busy && s.note == "Grant needed") {
+    // Why the last try failed (the old list stays on screen), and the one-tap fix for the Shizuku permission.
+    if (s.apps.isNotEmpty() && !s.busy && s.note.isNotEmpty()) {
         Spacer(Modifier.height(4.dp))
-        Text(
-            "Grant DUMP and PACKAGE_USAGE_STATS once from Termux, then tap Refresh.",
-            color = Palette.TextLabel,
-            fontSize = 12.sp,
-        )
+        Text(s.note, color = Palette.TempWarm, fontSize = 12.sp)
+    }
+    if (s.needShizukuPermission && !s.busy) {
+        OutlinedButton(
+            onClick = onAllowShizuku,
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp).height(40.dp),
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.dp, Palette.Battery.copy(alpha = 0.45f)),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = Palette.Battery),
+        ) {
+            Text("Allow Phone Status in Shizuku", fontWeight = FontWeight.Medium, fontSize = 13.sp)
+        }
     }
 }
 

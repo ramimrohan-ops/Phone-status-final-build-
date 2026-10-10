@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Rectangular widget. Nothing is clickable except the Refresh pill (w_refresh).
-  left  = battery ring (percent, temperature) and current ring (arrow, mA), each with an LED, label and a small line below
-  right = RAM bar, top apps (3 lines, Refresh button), storage bar, small CPU ring with GHz, CPU and GPU temperatures
+  3 x 2 widget (about 180 x 110 dp). Nothing is clickable except the refresh button (w_refresh).
+  left  = four rings, 2 x 2: battery, current / RAM, CPU clock. Each shows a small label, a value and a small line.
+  right = top apps (header with refresh button, 3 lines), storage bar, CPU and GPU temperatures
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/w_root"
@@ -10,29 +10,24 @@
     android:layout_height="match_parent"
     android:background="@drawable/widget_bg_minimal"
     android:orientation="horizontal"
-    android:paddingBottom="9dp"
-    android:paddingEnd="14dp"
-    android:paddingStart="12dp"
-    android:paddingTop="9dp">
+    android:paddingBottom="8dp"
+    android:paddingEnd="9dp"
+    android:paddingStart="8dp"
+    android:paddingTop="8dp">
 
-    <!-- Left: two rings -->
+    <!-- Left: 2 x 2 rings -->
     <LinearLayout
-        android:layout_width="0dp"
+        android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:layout_weight="1.35"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:orientation="vertical">
 
-        <!-- Battery -->
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center_horizontal"
-            android:orientation="vertical">
+            android:orientation="horizontal">
             <FrameLayout
-                android:layout_width="70dp"
-                android:layout_height="70dp">
+                android:layout_width="42dp"
+                android:layout_height="42dp">
                 <ImageView
                     android:id="@+id/w_batt_ring"
                     android:layout_width="match_parent"
@@ -43,82 +38,38 @@
                     android:layout_height="match_parent"
                     android:gravity="center"
                     android:orientation="vertical">
-                    <LinearLayout
+                    <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-                        <TextView
-                            android:id="@+id/w_battery_pct"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-light"
-                            android:includeFontPadding="false"
-                            android:text="--"
-                            android:textColor="@color/text_primary"
-                            android:textSize="22sp" />
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="1dp"
-                            android:includeFontPadding="false"
-                            android:text="%"
-                            android:textColor="@color/text_label"
-                            android:textSize="9sp" />
-                    </LinearLayout>
+                        android:fontFamily="sans-serif-medium"
+                        android:includeFontPadding="false"
+                        android:letterSpacing="0.08"
+                        android:text="BATT"
+                        android:textColor="@color/text_label"
+                        android:textSize="5.5sp" />
+                    <TextView
+                        android:id="@+id/w_battery_pct"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-light"
+                        android:includeFontPadding="false"
+                        android:text="--"
+                        android:textColor="@color/text_primary"
+                        android:textSize="12.5sp" />
                     <TextView
                         android:id="@+id/w_batt_temp"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="1dp"
                         android:includeFontPadding="false"
                         android:text="--°"
                         android:textColor="@color/text_label"
-                        android:textSize="9sp" />
+                        android:textSize="6.5sp" />
                 </LinearLayout>
             </FrameLayout>
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-                <FrameLayout
-                android:id="@+id/w_led_batt"
-                android:layout_width="12dp"
-                android:layout_height="12dp"
-                android:layout_marginEnd="5dp"
-                android:background="@drawable/led_off" />
-                <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-medium"
-                android:includeFontPadding="false"
-                android:letterSpacing="0.12"
-                android:text="BATTERY"
-                android:textColor="@color/text_label"
-                android:textSize="8sp" />
-            </LinearLayout>
-            <TextView
-                android:id="@+id/w_cap_line"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:includeFontPadding="false"
-                android:text="—"
-                android:textColor="@color/text_label"
-                android:textSize="8sp" />
-        </LinearLayout>
-
-        <!-- Current -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center_horizontal"
-            android:orientation="vertical">
             <FrameLayout
-                android:layout_width="70dp"
-                android:layout_height="70dp">
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+        android:layout_marginStart="4dp">
                 <ImageView
                     android:id="@+id/w_cur_ring"
                     android:layout_width="match_parent"
@@ -136,7 +87,7 @@
                         android:includeFontPadding="false"
                         android:text="▼"
                         android:textColor="@color/text_label"
-                        android:textSize="8sp" />
+                        android:textSize="5sp" />
                     <TextView
                         android:id="@+id/w_cur_val"
                         android:layout_width="wrap_content"
@@ -145,327 +96,72 @@
                         android:includeFontPadding="false"
                         android:text="—"
                         android:textColor="@color/text_primary"
-                        android:textSize="19sp" />
+                        android:textSize="11.5sp" />
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:includeFontPadding="false"
                         android:text="mA"
                         android:textColor="@color/text_label"
-                        android:textSize="8sp" />
+                        android:textSize="6sp" />
                 </LinearLayout>
             </FrameLayout>
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-                <FrameLayout
-                android:id="@+id/w_led_cur"
-                android:layout_width="12dp"
-                android:layout_height="12dp"
-                android:layout_marginEnd="5dp"
-                android:background="@drawable/led_off" />
-                <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-medium"
-                android:includeFontPadding="false"
-                android:letterSpacing="0.12"
-                android:text="CURRENT"
-                android:textColor="@color/text_label"
-                android:textSize="8sp" />
-            </LinearLayout>
-            <TextView
-                android:id="@+id/w_volt"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:includeFontPadding="false"
-                android:text="—"
-                android:textColor="@color/text_label"
-                android:textSize="8sp" />
         </LinearLayout>
-    </LinearLayout>
-
-    <!-- Divider -->
-    <FrameLayout
-        android:layout_width="1dp"
-        android:layout_height="match_parent"
-        android:layout_marginBottom="6dp"
-        android:layout_marginEnd="9dp"
-        android:layout_marginStart="4dp"
-        android:layout_marginTop="6dp"
-        android:background="@color/divider" />
-
-    <!-- Right: RAM, top apps, storage, CPU / GPU -->
-    <LinearLayout
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
-        android:layout_weight="1"
-        android:orientation="vertical">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:fontFamily="sans-serif-medium"
-                android:includeFontPadding="false"
-                android:letterSpacing="0.12"
-                android:text="RAM"
-                android:textColor="@color/text_label"
-                android:textSize="8sp" />
-            <TextView
-                android:id="@+id/w_ram_val"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-medium"
-                android:includeFontPadding="false"
-                android:text="--"
-                android:textColor="@color/text_primary"
-                android:textSize="10sp" />
-        </LinearLayout>
-        <ProgressBar
-            android:id="@+id/w_ram_bar"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="match_parent"
-            android:layout_height="3dp"
-            android:layout_marginTop="3dp"
-            android:max="100"
-            android:maxHeight="3dp"
-            android:minHeight="3dp"
-            android:progress="0"
-            android:progressDrawable="@drawable/bar_thin_white" />
 
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1" />
 
-        <!-- Top apps header: label, age of the data, Refresh button -->
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
             android:orientation="horizontal">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-medium"
-                android:includeFontPadding="false"
-                android:letterSpacing="0.12"
-                android:text="TOP APPS"
-                android:textColor="@color/text_label"
-                android:textSize="8sp" />
-            <TextView
-                android:id="@+id/w_apps_age"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="5dp"
-                android:layout_weight="1"
-                android:includeFontPadding="false"
-                android:singleLine="true"
-                android:text=""
-                android:textColor="@color/text_dim"
-                android:textSize="8sp" />
             <FrameLayout
-                android:id="@+id/w_refresh"
-                android:layout_width="wrap_content"
-                android:layout_height="19dp"
-                android:background="@drawable/btn_refresh"
-                android:paddingEnd="9dp"
-                android:paddingStart="9dp">
-                <TextView
-                    android:id="@+id/w_refresh_text"
-                    android:layout_width="wrap_content"
+                android:layout_width="42dp"
+                android:layout_height="42dp">
+                <ImageView
+                    android:id="@+id/w_ram_ring"
+                    android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:fontFamily="sans-serif-medium"
+                    android:scaleType="fitCenter" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
                     android:gravity="center"
-                    android:includeFontPadding="false"
-                    android:text="↻ Refresh"
-                    android:textColor="#FF07130E"
-                    android:textSize="9sp" />
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:includeFontPadding="false"
+                        android:letterSpacing="0.08"
+                        android:text="RAM"
+                        android:textColor="@color/text_label"
+                        android:textSize="5.5sp" />
+                    <TextView
+                        android:id="@+id/w_ram_val"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-light"
+                        android:includeFontPadding="false"
+                        android:text="--"
+                        android:textColor="@color/text_primary"
+                        android:textSize="12.5sp" />
+                    <TextView
+                        android:id="@+id/w_ram_sub"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:includeFontPadding="false"
+                        android:text="of --"
+                        android:textColor="@color/text_label"
+                        android:textSize="5.5sp" />
+                </LinearLayout>
             </FrameLayout>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/w_app1_row"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-            <TextView
-                android:id="@+id/w_app1_rank"
-                android:layout_width="11dp"
-                android:layout_height="wrap_content"
-                android:includeFontPadding="false"
-                android:text=""
-                android:textColor="@color/text_dim"
-                android:textSize="8sp" />
-            <TextView
-                android:id="@+id/w_app1_name"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:ellipsize="end"
-                android:fontFamily="sans-serif-medium"
-                android:includeFontPadding="false"
-                android:singleLine="true"
-                android:text=""
-                android:textColor="@color/text_primary"
-                android:textSize="10sp" />
-            <TextView
-                android:id="@+id/w_app1_mb"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:includeFontPadding="false"
-                android:text=""
-                android:textColor="@color/text_label"
-                android:textSize="10sp" />
-        </LinearLayout>
-        <LinearLayout
-            android:id="@+id/w_app2_row"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-            <TextView
-                android:id="@+id/w_app2_rank"
-                android:layout_width="11dp"
-                android:layout_height="wrap_content"
-                android:includeFontPadding="false"
-                android:text=""
-                android:textColor="@color/text_dim"
-                android:textSize="8sp" />
-            <TextView
-                android:id="@+id/w_app2_name"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:ellipsize="end"
-                android:fontFamily="sans-serif-medium"
-                android:includeFontPadding="false"
-                android:singleLine="true"
-                android:text=""
-                android:textColor="@color/text_primary"
-                android:textSize="10sp" />
-            <TextView
-                android:id="@+id/w_app2_mb"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:includeFontPadding="false"
-                android:text=""
-                android:textColor="@color/text_label"
-                android:textSize="10sp" />
-        </LinearLayout>
-        <LinearLayout
-            android:id="@+id/w_app3_row"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-            <TextView
-                android:id="@+id/w_app3_rank"
-                android:layout_width="11dp"
-                android:layout_height="wrap_content"
-                android:includeFontPadding="false"
-                android:text=""
-                android:textColor="@color/text_dim"
-                android:textSize="8sp" />
-            <TextView
-                android:id="@+id/w_app3_name"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:ellipsize="end"
-                android:fontFamily="sans-serif-medium"
-                android:includeFontPadding="false"
-                android:singleLine="true"
-                android:text=""
-                android:textColor="@color/text_primary"
-                android:textSize="10sp" />
-            <TextView
-                android:id="@+id/w_app3_mb"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:includeFontPadding="false"
-                android:text=""
-                android:textColor="@color/text_label"
-                android:textSize="10sp" />
-        </LinearLayout>
-
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:fontFamily="sans-serif-medium"
-                android:includeFontPadding="false"
-                android:letterSpacing="0.12"
-                android:text="STORAGE"
-                android:textColor="@color/text_label"
-                android:textSize="8sp" />
-            <TextView
-                android:id="@+id/w_sto_val"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-medium"
-                android:includeFontPadding="false"
-                android:text="--"
-                android:textColor="@color/text_primary"
-                android:textSize="10sp" />
-        </LinearLayout>
-        <ProgressBar
-            android:id="@+id/w_sto_bar"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="match_parent"
-            android:layout_height="3dp"
-            android:layout_marginTop="3dp"
-            android:max="100"
-            android:maxHeight="3dp"
-            android:minHeight="3dp"
-            android:progress="0"
-            android:progressDrawable="@drawable/bar_thin_white" />
-
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
-
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@color/divider" />
-
-        <!-- CPU ring, CPU, GPU -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
             <FrameLayout
-                android:layout_width="30dp"
-                android:layout_height="30dp">
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+        android:layout_marginStart="4dp">
                 <ImageView
                     android:id="@+id/w_cpu_ring"
                     android:layout_width="match_parent"
@@ -477,14 +173,23 @@
                     android:gravity="center"
                     android:orientation="vertical">
                     <TextView
-                        android:id="@+id/w_cpu_ghz"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:fontFamily="sans-serif-medium"
                         android:includeFontPadding="false"
+                        android:letterSpacing="0.08"
+                        android:text="CPU"
+                        android:textColor="@color/text_label"
+                        android:textSize="5.5sp" />
+                    <TextView
+                        android:id="@+id/w_cpu_ghz"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-light"
+                        android:includeFontPadding="false"
                         android:text="—"
                         android:textColor="@color/text_primary"
-                        android:textSize="9sp" />
+                        android:textSize="12.5sp" />
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -494,80 +199,291 @@
                         android:textSize="6sp" />
                 </LinearLayout>
             </FrameLayout>
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="7dp"
-                android:layout_weight="1"
-                android:orientation="vertical">
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-                    <TextView
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Divider -->
+    <FrameLayout
+        android:layout_width="1dp"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="2dp"
+        android:layout_marginEnd="5dp"
+        android:layout_marginStart="5dp"
+        android:layout_marginTop="2dp"
+        android:background="@color/divider" />
+
+    <!-- Right: top apps, storage, temperatures -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <!-- Header: label, age of the data, refresh button -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="sans-serif-medium"
                 android:includeFontPadding="false"
-                android:letterSpacing="0.12"
-                android:text="CPU"
+                android:letterSpacing="0.1"
+                android:text="TOP"
                 android:textColor="@color/text_label"
-                android:textSize="8sp" />
-                    <FrameLayout
-                android:id="@+id/w_led_cpu"
-                android:layout_width="12dp"
-                android:layout_height="12dp"
-                android:layout_marginStart="5dp"
-                android:background="@drawable/led_off" />
-                </LinearLayout>
-                <TextView
-                    android:id="@+id/w_cpu_temp"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="sans-serif-medium"
-                    android:includeFontPadding="false"
-                    android:text="—"
-                    android:textColor="@color/text_primary"
-                    android:textSize="12sp" />
-            </LinearLayout>
-            <LinearLayout
+                android:textSize="6.5sp" />
+            <TextView
+                android:id="@+id/w_apps_age"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
                 android:layout_weight="1"
-                android:orientation="vertical">
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-                    <TextView
+                android:includeFontPadding="false"
+                android:singleLine="true"
+                android:text=""
+                android:textColor="@color/text_dim"
+                android:textSize="6.5sp" />
+            <FrameLayout
+                android:id="@+id/w_refresh"
+                android:layout_width="22dp"
+                android:layout_height="17dp"
+                android:background="@drawable/btn_refresh">
+                <TextView
+                    android:id="@+id/w_refresh_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:fontFamily="sans-serif-medium"
+                    android:gravity="center"
+                    android:includeFontPadding="false"
+                    android:text="↻"
+                    android:textColor="#FF07130E"
+                    android:textSize="12sp" />
+            </FrameLayout>
+        </LinearLayout>
+
+        <!-- Shown instead of the three lines when there is no list yet (Tap refresh, Shizuku off ...) -->
+        <TextView
+            android:id="@+id/w_apps_note"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:ellipsize="end"
+            android:includeFontPadding="false"
+            android:maxLines="3"
+            android:text=""
+            android:textColor="@color/text_label"
+            android:textSize="8sp"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/w_app1_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+            <TextView
+                android:id="@+id/w_app1_rank"
+                android:layout_width="7dp"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:text=""
+                android:textColor="@color/text_dim"
+                android:textSize="6.5sp" />
+            <TextView
+                android:id="@+id/w_app1_name"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="false"
+                android:singleLine="true"
+                android:text=""
+                android:textColor="@color/text_primary"
+                android:textSize="9sp" />
+            <TextView
+                android:id="@+id/w_app1_mb"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="3dp"
+                android:includeFontPadding="false"
+                android:text=""
+                android:textColor="@color/text_label"
+                android:textSize="8sp" />
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/w_app2_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+            <TextView
+                android:id="@+id/w_app2_rank"
+                android:layout_width="7dp"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:text=""
+                android:textColor="@color/text_dim"
+                android:textSize="6.5sp" />
+            <TextView
+                android:id="@+id/w_app2_name"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="false"
+                android:singleLine="true"
+                android:text=""
+                android:textColor="@color/text_primary"
+                android:textSize="9sp" />
+            <TextView
+                android:id="@+id/w_app2_mb"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="3dp"
+                android:includeFontPadding="false"
+                android:text=""
+                android:textColor="@color/text_label"
+                android:textSize="8sp" />
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/w_app3_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+            <TextView
+                android:id="@+id/w_app3_rank"
+                android:layout_width="7dp"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:text=""
+                android:textColor="@color/text_dim"
+                android:textSize="6.5sp" />
+            <TextView
+                android:id="@+id/w_app3_name"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="false"
+                android:singleLine="true"
+                android:text=""
+                android:textColor="@color/text_primary"
+                android:textSize="9sp" />
+            <TextView
+                android:id="@+id/w_app3_mb"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="3dp"
+                android:includeFontPadding="false"
+                android:text=""
+                android:textColor="@color/text_label"
+                android:textSize="8sp" />
+        </LinearLayout>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- Storage -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="false"
+                android:letterSpacing="0.1"
+                android:text="STO"
+                android:textColor="@color/text_label"
+                android:textSize="6sp" />
+            <TextView
+                android:id="@+id/w_sto_val"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="sans-serif-medium"
                 android:includeFontPadding="false"
-                android:letterSpacing="0.12"
+                android:text="--"
+                android:textColor="@color/text_primary"
+                android:textSize="7.5sp" />
+        </LinearLayout>
+        <ProgressBar
+            android:id="@+id/w_sto_bar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:layout_marginTop="2dp"
+            android:max="100"
+            android:maxHeight="3dp"
+            android:minHeight="3dp"
+            android:progress="0"
+            android:progressDrawable="@drawable/bar_thin_white" />
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="4dp"
+            android:background="@color/divider" />
+
+        <!-- CPU and GPU temperatures -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="false"
+                android:text="CPU"
+                android:textColor="@color/text_label"
+                android:textSize="6sp" />
+            <TextView
+                android:id="@+id/w_cpu_temp"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="3dp"
+                android:layout_weight="1"
+                android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="false"
+                android:singleLine="true"
+                android:text="—"
+                android:textColor="@color/text_primary"
+                android:textSize="8.5sp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="false"
                 android:text="GPU"
                 android:textColor="@color/text_label"
-                android:textSize="8sp" />
-                    <FrameLayout
-                android:id="@+id/w_led_gpu"
-                android:layout_width="12dp"
-                android:layout_height="12dp"
-                android:layout_marginStart="5dp"
-                android:background="@drawable/led_off" />
-                </LinearLayout>
-                <TextView
-                    android:id="@+id/w_gpu_temp"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="sans-serif-medium"
-                    android:includeFontPadding="false"
-                    android:text="—"
-                    android:textColor="@color/text_primary"
-                    android:textSize="12sp" />
-            </LinearLayout>
+                android:textSize="6sp" />
+            <TextView
+                android:id="@+id/w_gpu_temp"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="3dp"
+                android:layout_weight="1"
+                android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="false"
+                android:singleLine="true"
+                android:text="—"
+                android:textColor="@color/text_primary"
+                android:textSize="8.5sp" />
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>

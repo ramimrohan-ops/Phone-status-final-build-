@@ -6,14 +6,15 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import dev.ramim.phonestatus.widget.WidgetRenderer
 import java.util.Locale
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
+import rikka.shizuku.Shizuku
 
 /** One app and the memory (PSS, all its processes added up) it uses right now. */
 data class AppMem(val label: String, val pkg: String, val mb: Int)
@@ -27,12 +28,14 @@ data class TopAppsState(
     val source: String = "",
     /** Why the last read failed (permissions and the first words dumpsys printed), for the Debug tab. */
     val detail: String = "",
+    /** True when Shizuku is running but has not been allowed for this app yet (the app shows an Allow button). */
+    val needShizukuPermission: Boolean = false,
 )
 
 /**
  * The memory report is read once per tap on Refresh, never on a timer.
- * It runs `dumpsys meminfo` as this app. That needs two permissions, both granted once from a shell with pm grant:
- * DUMP and PACKAGE_USAGE_STATS.
+ * Other apps' memory is only visible to a shell-level helper, so `dumpsys meminfo` is run through Shizuku, which must be
+ * installed, running and allowed for this app.
  */
 object TopApps {
 
@@ -54,7 +57,10 @@ object TopApps {
             val old = _state.value
             _state.value = if (result.apps.isEmpty() && old.apps.isNotEmpty()) {
                 // Keep the last good list (its age keeps counting) and remember why this try failed.
-                old.copy(busy = false, note = result.note, source = result.source, detail = result.detail)
+                old.copy(
+                    busy = false, note = result.note, source = result.source, detail = result.detail,
+                    needShizukuPermission = result.needShizukuPermission,
+                )
             } else {
                 result
             }
@@ -75,20 +81,30 @@ object TopApps {
 
     // ---- reading -------------------------------------------------------------------------------------------------
 
-    private fun has(ctx: Context, permission: String) =
-        ctx.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
-
-    private fun read(ctx: Context): TopAppsState {
-        val dump = has(ctx, "android.permission.DUMP")
-        val usage = has(ctx, "android.permission.PACKAGE_USAGE_STATS")
-        val tries = StringBuilder()
-        for (cmd in listOf(arrayOf("dumpsys", "meminfo"), arrayOf("dumpsys", "activity", "meminfo"))) {
-            val text = runProcess(cmd)
-            if (text != null && text.contains(MARK)) return parse(ctx, text, "DUMP permission")
-            tries.append(cmd.joinToString(" ")).append(": ").append(firstWords(text)).append('\n')
+    private suspend fun read(ctx: Context): TopAppsState {
+        return when (ShizukuAccess.status(ctx)) {
+            ShizukuAccess.Status.READY -> {
+                val tries = StringBuilder()
+                for (cmd in listOf(arrayOf("dumpsys", "meminfo"), arrayOf("dumpsys", "activity", "meminfo"))) {
+                    val text = ShizukuAccess.exec(arrayOf("sh", "-c", cmd.joinToString(" ") + " 2>&1"))
+                    if (text != null && text.contains(MARK)) return parse(ctx, text, "Shizuku")
+                    tries.append(cmd.joinToString(" ")).append(": ").append(firstWords(text)).append('\n')
+                }
+                TopAppsState(note = "Could not read", source = "Shizuku", detail = "Shizuku allowed, but no memory report came back\n" + tries.toString().trim())
+            }
+            ShizukuAccess.Status.NO_PERMISSION -> {
+                ShizukuAccess.requestPermission()
+                TopAppsState(
+                    note = "Allow in Shizuku",
+                    detail = "Shizuku is running, Phone Status is not allowed yet. Tap Allow, or open Shizuku and allow Phone Status.",
+                    needShizukuPermission = true,
+                )
+            }
+            ShizukuAccess.Status.NOT_RUNNING ->
+                TopAppsState(note = "Shizuku off", detail = "Shizuku is installed but not running. Start it with wireless debugging, then tap Refresh.")
+            ShizukuAccess.Status.NOT_INSTALLED ->
+                TopAppsState(note = "Not available", detail = "Shizuku is not installed (moe.shizuku.privileged.api not found).")
         }
-        val detail = "DUMP ${if (dump) "granted" else "missing"}, USAGE_STATS ${if (usage) "granted" else "missing"}\n" + tries.toString().trim()
-        return TopAppsState(note = if (dump && usage) "Not available" else "Grant needed", detail = detail)
     }
 
     /** The start of what a command printed, on one line. */
@@ -96,15 +112,6 @@ object TopApps {
         if (text == null) return "could not run"
         val t = text.trim().replace(Regex("\\s+"), " ")
         return if (t.isEmpty()) "no output" else if (t.length > 140) t.substring(0, 140) + "…" else t
-    }
-
-    private fun runProcess(cmd: Array<String>): String? = try {
-        val p = ProcessBuilder(*cmd).redirectErrorStream(true).start()
-        val out = p.inputStream.bufferedReader().readText()
-        if (!p.waitFor(6, TimeUnit.SECONDS)) p.destroy()
-        out
-    } catch (_: Throwable) {
-        null
     }
 
     // ---- parsing -------------------------------------------------------------------------------------------------
@@ -195,5 +202,70 @@ object TopApps {
             s < 3600 -> "${s / 60}m"
             else -> "${s / 3600}h"
         }
+    }
+}
+
+/** Shizuku as a helper that runs one shell command for us. Everything is wrapped: a missing Shizuku never crashes. */
+object ShizukuAccess {
+
+    enum class Status { NOT_INSTALLED, NOT_RUNNING, NO_PERMISSION, READY }
+
+    private const val MANAGER = "moe.shizuku.privileged.api"
+
+    private fun installed(ctx: Context): Boolean = try {
+        ctx.packageManager.getPackageInfo(MANAGER, 0)
+        true
+    } catch (_: Throwable) {
+        false
+    }
+
+    private fun alive(): Boolean = try {
+        Shizuku.pingBinder()
+    } catch (_: Throwable) {
+        false
+    }
+
+    /** Looks at Shizuku, waiting a moment for it to connect when this process has just started. */
+    suspend fun status(ctx: Context): Status {
+        if (!installed(ctx)) return Status.NOT_INSTALLED
+        var waited = 0
+        while (!alive() && waited < 2_000) {
+            delay(100)
+            waited += 100
+        }
+        if (!alive()) return Status.NOT_RUNNING
+        val ok = try {
+            Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
+        } catch (_: Throwable) {
+            false
+        }
+        return if (ok) Status.READY else Status.NO_PERMISSION
+    }
+
+    fun requestPermission() {
+        try {
+            if (!Shizuku.shouldShowRequestPermissionRationale()) Shizuku.requestPermission(4711)
+        } catch (_: Throwable) {
+        }
+    }
+
+    /** Runs [cmd] with shell rights through Shizuku and returns what it printed, or null. */
+    fun exec(cmd: Array<String>): String? = try {
+        val m = Shizuku::class.java.getDeclaredMethod(
+            "newProcess",
+            Array<String>::class.java,
+            Array<String>::class.java,
+            String::class.java,
+        )
+        m.isAccessible = true
+        val p = m.invoke(null, cmd, null, null) as Process
+        val out = p.inputStream.bufferedReader().readText()
+        try {
+            p.waitFor()
+        } catch (_: Throwable) {
+        }
+        out
+    } catch (_: Throwable) {
+        null
     }
 }

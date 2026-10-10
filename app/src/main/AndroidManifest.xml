@@ -7,14 +7,6 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
-    <!-- Only usable after it is granted once from a shell (pm grant); lets the Refresh button read the memory report. -->
-    <uses-permission
-        android:name="android.permission.DUMP"
-        tools:ignore="ProtectedPermissions" />
-    <!-- dumpsys meminfo needs this as well as DUMP; granted once from a shell the same way. -->
-    <uses-permission
-        android:name="android.permission.PACKAGE_USAGE_STATS"
-        tools:ignore="ProtectedPermissions" />
     <!-- To show the real names of the apps in the top-apps list. -->
     <uses-permission
         android:name="android.permission.QUERY_ALL_PACKAGES"
@@ -22,6 +14,7 @@
 
     <queries>
         <package android:name="com.ramim.homedragon" />
+        <package android:name="moe.shizuku.privileged.api" />
     </queries>
 
     <application
@@ -75,6 +68,15 @@
         <receiver
             android:name=".widget.RefreshReceiver"
             android:exported="false" />
+
+        <!-- Shizuku hands this app its connection to the shell-level helper. -->
+        <provider
+            android:name="rikka.shizuku.ShizukuProvider"
+            android:authorities="${applicationId}.shizuku"
+            android:enabled="true"
+            android:exported="true"
+            android:multiprocess="false"
+            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
 
         <receiver
             android:name=".live.BootReceiver"
