@@ -29,6 +29,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -51,6 +52,7 @@ class LiveUpdateService : Service() {
     private val screenReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             screenOn.value = intent.action == Intent.ACTION_SCREEN_ON
+            LiveDebug.setScreenOn(screenOn.value)
         }
     }
 
@@ -60,6 +62,7 @@ class LiveUpdateService : Service() {
         super.onCreate()
         val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
         screenOn.value = pm.isInteractive
+        LiveDebug.setScreenOn(screenOn.value)
         ContextCompat.registerReceiver(
             this,
             screenReceiver,
@@ -87,11 +90,19 @@ class LiveUpdateService : Service() {
         withContext(Dispatchers.IO) { RootSetup.apply(ctx.packageName) }
 
         while (true) {
-            screenOn.first { it } // suspends here while the screen is off
-            ForegroundGate.allowed.first { it } // and here while another app is in front
+            // Suspends here while the screen is off or another app is in front.
+            val shouldRun = combine(screenOn, ForegroundGate.allowed) { on, ok -> on && ok }
+            if (!shouldRun.first()) {
+                LiveDebug.setStatus(
+                    if (!screenOn.value) "Paused: screen is off" else "Paused: another app is in front",
+                )
+                shouldRun.first { it }
+            }
+            LiveDebug.setStatus("Running")
             val t0 = SystemClock.elapsedRealtime()
 
             if (WidgetRenderer.widgetIds(ctx).isEmpty()) {
+                LiveDebug.setStatus("Stopped: no widget on the home screen")
                 stopSelf()
                 return
             }
@@ -101,6 +112,7 @@ class LiveUpdateService : Service() {
             }
             LiveStats.thermal = thermal
             WidgetRenderer.renderAll(ctx, stats, thermal)
+            LiveDebug.tick()
 
             val spent = SystemClock.elapsedRealtime() - t0
             delay((1_000L - spent).coerceAtLeast(150L))

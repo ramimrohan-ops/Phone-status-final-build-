@@ -17,21 +17,41 @@ class ForegroundWatcherService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         ForegroundGate.setConnected(true)
+        ForegroundGate.setPackageLists(homePackages(), keyboardPackages())
+        ForegroundGate.logEvent("(service connected)", "INFO")
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null || event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
         val pkg = event.packageName?.toString() ?: return
-        // Notification shade, lock screen, keyboard and the like don't change which app you are in.
-        if (pkg == "android" || pkg == "com.android.systemui" || pkg in keyboardPackages()) return
+        val homes = homePackages()
+        val keyboards = keyboardPackages()
+        ForegroundGate.setPackageLists(homes, keyboards)
 
-        ForegroundGate.setInFront(pkg == packageName || pkg in homePackages())
+        // Notification shade, lock screen, keyboard and the like don't change which app you are in.
+        if (pkg == "android" || pkg == "com.android.systemui" || pkg in keyboards) {
+            ForegroundGate.logEvent(pkg, "IGNORED")
+            return
+        }
+
+        val isThisApp = pkg == packageName
+        val front = isThisApp || pkg in homes
+        ForegroundGate.setInFront(front)
+        ForegroundGate.logEvent(
+            pkg,
+            when {
+                isThisApp -> "RAN · this app"
+                front -> "RAN · home"
+                else -> "PAUSED"
+            },
+        )
     }
 
     override fun onInterrupt() {}
 
     override fun onUnbind(intent: Intent?): Boolean {
         ForegroundGate.setConnected(false)
+        ForegroundGate.logEvent("(service disconnected)", "INFO")
         return super.onUnbind(intent)
     }
 

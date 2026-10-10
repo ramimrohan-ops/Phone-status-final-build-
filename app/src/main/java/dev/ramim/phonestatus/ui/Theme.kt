@@ -6,9 +6,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 object Palette {
-    val BgTop = Color(0xFF111A3A)
-    val BgBottom = Color(0xFF05060C)
+    val BgTop = Color(0xFF0E111A)
+    val BgBottom = Color(0xFF06070B)
     val GlassBorder = Color(0x26FFFFFF)
+    val Hairline = Color(0x1AFFFFFF)
+    val TextLabel = Color(0xFF7B839F)
+    val SoftWhite = Color(0xFFD9DEEE)
 
     val TextPrimary = Color(0xFFF2F5FF)
     val TextSecondary = Color(0xFF9AA4C2)
