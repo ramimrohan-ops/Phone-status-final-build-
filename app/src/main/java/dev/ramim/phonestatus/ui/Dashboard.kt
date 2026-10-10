@@ -86,7 +86,7 @@ fun Dashboard(
     onAddWidget: () -> Unit,
     onRetryRoot: () -> Unit,
     smartPause: Boolean,
-    onOpenAccessibility: () -> Unit,
+    onOpenHomeDragon: () -> Unit,
 ) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
 
@@ -97,9 +97,9 @@ fun Dashboard(
     ) {
         Box(Modifier.weight(1f).fillMaxWidth()) {
             if (tab == 0) {
-                StatusTab(stats, thermal, liveHz, onAddWidget, onRetryRoot, smartPause, onOpenAccessibility)
+                StatusTab(stats, thermal, liveHz, onAddWidget, onRetryRoot, smartPause, onOpenHomeDragon)
             } else {
-                DebugTab(onOpenAccessibility)
+                DebugTab(onOpenHomeDragon)
             }
         }
         BottomTabs(selected = tab, onSelect = { tab = it })
@@ -157,7 +157,7 @@ private fun StatusTab(
     onAddWidget: () -> Unit,
     onRetryRoot: () -> Unit,
     smartPause: Boolean,
-    onOpenAccessibility: () -> Unit,
+    onOpenHomeDragon: () -> Unit,
 ) {
     Column(
         Modifier
@@ -184,7 +184,7 @@ private fun StatusTab(
         Spacer(Modifier.height(28.dp))
         Hairline()
         Spacer(Modifier.height(24.dp))
-        SmartPauseSection(smartPause, onOpenAccessibility)
+        SmartPauseSection(smartPause, onOpenHomeDragon)
         Spacer(Modifier.height(28.dp))
         OutlinedButton(
             onClick = onAddWidget,
@@ -466,17 +466,18 @@ private fun SmartPauseSection(on: Boolean, onOpenSettings: () -> Unit) {
     Spacer(Modifier.height(8.dp))
     Text(
         text = if (on) {
-            "Live updates run only on your home screen and in this app, and pause in other apps. The Debug tab shows what it sees."
+            "Live updates run only while Home Dragon sees your home screen on top, unlocked, with no keyboard or notification shade. " +
+                "The Debug tab shows what it reports."
         } else {
-            "Updates run whenever the screen is on. Switch on the accessibility service to pause them while you are in other apps. " +
-                "If the switch is greyed out: Settings, Apps, Phone Status, three dots, Allow restricted settings."
+            "Updates stay paused until Home Dragon reports the home screen. Open Home Dragon, make sure its icon finder is on, " +
+                "then go to your home screen. Nothing is sent while you are away from home, so this can also just mean that."
         },
         color = Palette.TextLabel,
         fontSize = 13.sp,
     )
     if (!on) {
         TextButton(onClick = onOpenSettings) {
-            Text("Open Accessibility settings", color = Palette.Battery)
+            Text("Open Home Dragon", color = Palette.Battery)
         }
     }
 }

@@ -9,7 +9,6 @@ import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -60,8 +59,13 @@ class MainActivity : ComponentActivity() {
                     onAddWidget = { requestPinWidget(this) },
                     onRetryRoot = vm::retryRoot,
                     smartPause = smartPause,
-                    onOpenAccessibility = {
-                        startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                    onOpenHomeDragon = {
+                        val launch = packageManager.getLaunchIntentForPackage(ForegroundGate.HOME_DRAGON_PACKAGE)
+                        if (launch != null) {
+                            startActivity(launch)
+                        } else {
+                            Toast.makeText(this, "Home Dragon is not installed", Toast.LENGTH_SHORT).show()
+                        }
                     },
                 )
             }
@@ -70,6 +74,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        ForegroundGate.register(this)
         // The app is in the foreground here, so Android always allows starting the live service.
         LiveUpdateService.startIfWidgets(this)
     }

@@ -3,6 +3,4 @@
     <string name="app_name">Phone Status</string>
     <string name="widget_label">Phone Status</string>
     <string name="widget_description">Battery, RAM, storage, refresh rate and temperature, live every second.</string>
-    <string name="accessibility_label">Phone Status smart pause</string>
-    <string name="accessibility_description">Only notices which app is open, so the live widget can pause while you are in other apps. It does not read your screen, typing or taps.</string>
 </resources>

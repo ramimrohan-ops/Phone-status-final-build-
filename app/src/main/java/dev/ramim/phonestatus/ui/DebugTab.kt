@@ -44,13 +44,13 @@ import kotlinx.coroutines.delay
 
 /** Shows what smart pause sees and decides, so a stuck widget can be traced to its cause. */
 @Composable
-fun DebugTab(onOpenAccessibility: () -> Unit) {
+fun DebugTab(onOpenHomeDragon: () -> Unit) {
     val ctx = LocalContext.current
     val connected by ForegroundGate.connected.collectAsStateWithLifecycle()
     val allowed by ForegroundGate.allowed.collectAsStateWithLifecycle()
     val events by ForegroundGate.events.collectAsStateWithLifecycle()
-    val homes by ForegroundGate.homePackages.collectAsStateWithLifecycle()
-    val keyboards by ForegroundGate.keyboardPackages.collectAsStateWithLifecycle()
+    val why by ForegroundGate.why.collectAsStateWithLifecycle()
+    val lastSignal by ForegroundGate.lastSignalAt.collectAsStateWithLifecycle()
     val status by LiveDebug.status.collectAsStateWithLifecycle()
     val rate by LiveDebug.rate.collectAsStateWithLifecycle()
     val lastUpdate by LiveDebug.lastUpdateAt.collectAsStateWithLifecycle()
@@ -64,7 +64,6 @@ fun DebugTab(onOpenAccessibility: () -> Unit) {
         }
     }
 
-    val lastApp = events.firstOrNull { it.decision != "IGNORED" && !it.pkg.startsWith("(") }
     val updating = lastUpdate != 0L && now - lastUpdate < 3_000L
     val liveRate = if (updating) String.format(Locale.US, "%.1f / s", rate) else "0 / s (not updating)"
 
@@ -81,12 +80,11 @@ fun DebugTab(onOpenAccessibility: () -> Unit) {
         Spacer(Modifier.height(10.dp))
         Text(
             text = when {
-                !connected -> "Accessibility service is not connected, so smart pause is off and updates run whenever the screen is on."
-                allowed -> "Smart pause is on and the home screen or this app is in front, so updates should run."
-                else -> "Smart pause is on and it thinks another app is in front, so updates are paused" +
-                    (lastApp?.let { " (last app: ${it.pkg})." } ?: ".")
+                !connected -> "No message from Home Dragon yet, so updates are paused. Nothing is sent while you are away from the home screen."
+                allowed -> "Home Dragon says the home screen is on top, so updates should run."
+                else -> "Updates are paused. Home Dragon reports: $why."
             },
-            color = if (connected && !allowed) Palette.TempWarm else Palette.TextLabel,
+            color = if (!allowed) Palette.TempWarm else Palette.TextLabel,
             fontSize = 13.sp,
         )
 
@@ -98,38 +96,21 @@ fun DebugTab(onOpenAccessibility: () -> Unit) {
         Spacer(Modifier.height(12.dp))
         Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
             DetailRow(
-                "Accessibility service",
-                if (connected) "Connected" else "Not connected",
+                "Home Dragon link",
+                if (connected) "Message received" else "No message yet",
                 if (connected) Palette.Battery else Palette.TempWarm,
             )
+            DetailRow("Home Dragon says", if (connected) why else "—")
+            DetailRow("Last message", if (lastSignal == 0L) "never" else "${clock(lastSignal)} (${ago(now, lastSignal)})")
             DetailRow("Updates allowed", if (allowed) "Yes" else "No (paused)", if (allowed) Palette.Battery else Palette.TempWarm)
             DetailRow("Widget loop", status)
             DetailRow("Widget updates", liveRate)
             DetailRow("Last update", if (lastUpdate == 0L) "never" else ago(now, lastUpdate))
             DetailRow("Screen", if (screenOn) "On" else "Off")
-            DetailRow(
-                "Last app reported",
-                lastApp?.pkg ?: "none yet",
-            )
-            DetailRow("…at", lastApp?.let { "${clock(it.time)} (${ago(now, it.time)})" } ?: "—")
         }
-        if (!connected) {
-            TextButton(onClick = onOpenAccessibility) {
-                Text("Open Accessibility settings", color = Palette.Battery)
-            }
+        TextButton(onClick = onOpenHomeDragon) {
+            Text("Open Home Dragon", color = Palette.Battery)
         }
-
-        Spacer(Modifier.height(24.dp))
-        Hairline()
-        Spacer(Modifier.height(20.dp))
-
-        Label("Recognised home screen apps")
-        Spacer(Modifier.height(10.dp))
-        PackageList(homes, "none found yet. Switch to the home screen once.")
-        Spacer(Modifier.height(18.dp))
-        Label("Keyboards (ignored)")
-        Spacer(Modifier.height(10.dp))
-        PackageList(keyboards, "none")
 
         Spacer(Modifier.height(24.dp))
         Hairline()
@@ -140,7 +121,7 @@ fun DebugTab(onOpenAccessibility: () -> Unit) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Label("App switches (newest first)")
+            Label("Messages (newest first)")
             Row {
                 TextButton(onClick = { copyLog(ctx, connected, allowed, status, events) }) {
                     Text("Copy", color = Palette.Battery, fontSize = 13.sp)
@@ -153,7 +134,7 @@ fun DebugTab(onOpenAccessibility: () -> Unit) {
         Spacer(Modifier.height(6.dp))
         if (events.isEmpty()) {
             Text(
-                "Nothing yet. Open another app, then come back here.",
+                "Nothing yet. Open Home Dragon and go to your home screen.",
                 color = Palette.TextLabel,
                 fontSize = 13.sp,
             )
@@ -167,22 +148,9 @@ fun DebugTab(onOpenAccessibility: () -> Unit) {
 }
 
 @Composable
-private fun PackageList(packages: Set<String>, empty: String) {
-    if (packages.isEmpty()) {
-        Text(empty, color = Palette.TextLabel, fontSize = 13.sp)
-    } else {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            packages.sorted().forEach {
-                Text(it, color = Palette.TextPrimary, fontSize = 13.sp, fontFamily = FontFamily.Monospace)
-            }
-        }
-    }
-}
-
-@Composable
 private fun EventRow(e: SwitchEvent) {
     val color = when {
-        e.decision.startsWith("RAN") -> Palette.Battery
+        e.decision == "RUN" -> Palette.Battery
         e.decision == "PAUSED" -> Palette.TempWarm
         else -> Palette.TextLabel
     }
@@ -219,7 +187,7 @@ private fun copyLog(
 ) {
     val text = buildString {
         appendLine("Phone Status smart pause log")
-        appendLine("service connected: $connected")
+        appendLine("home dragon message received: $connected")
         appendLine("updates allowed: $allowed")
         appendLine("widget loop: $status")
         appendLine("events (newest first):")

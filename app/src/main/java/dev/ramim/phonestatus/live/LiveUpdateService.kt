@@ -41,7 +41,7 @@ object LiveStats {
 
 /**
  * Pushes the home-screen widget every second while the screen is on.
- * Pauses while the screen is off, or (with the accessibility service on) while another app is in front, and stops itself when no widget is placed.
+ * Runs only while Home Dragon says the home screen is on top (and the screen is on). Pauses otherwise, and stops itself when no widget is placed.
  */
 class LiveUpdateService : Service() {
 
@@ -63,6 +63,7 @@ class LiveUpdateService : Service() {
         val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
         screenOn.value = pm.isInteractive
         LiveDebug.setScreenOn(screenOn.value)
+        ForegroundGate.register(this)
         ContextCompat.registerReceiver(
             this,
             screenReceiver,
@@ -81,7 +82,15 @@ class LiveUpdateService : Service() {
             buildNotification(),
             ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE,
         )
-        if (loopJob == null) loopJob = scope.launch { loop() }
+        if (loopJob == null) {
+            loopJob = scope.launch { loop() }
+            scope.launch {
+                while (true) {
+                    delay(1_000L)
+                    ForegroundGate.checkStale()
+                }
+            }
+        }
         return START_STICKY
     }
 
@@ -94,7 +103,7 @@ class LiveUpdateService : Service() {
             val shouldRun = combine(screenOn, ForegroundGate.allowed) { on, ok -> on && ok }
             if (!shouldRun.first()) {
                 LiveDebug.setStatus(
-                    if (!screenOn.value) "Paused: screen is off" else "Paused: another app is in front",
+                    if (!screenOn.value) "Paused: screen is off" else "Paused: " + ForegroundGate.why.value,
                 )
                 shouldRun.first { it }
             }

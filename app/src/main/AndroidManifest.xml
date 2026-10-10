@@ -8,10 +8,7 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <queries>
-        <intent>
-            <action android:name="android.intent.action.MAIN" />
-            <category android:name="android.intent.category.HOME" />
-        </intent>
+        <package android:name="com.ramim.homedragon" />
     </queries>
 
     <application
@@ -51,18 +48,6 @@
                 android:value="Refreshes the home-screen widget every second" />
         </service>
 
-        <service
-            android:name=".live.ForegroundWatcherService"
-            android:exported="false"
-            android:label="@string/accessibility_label"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/foreground_watcher" />
-        </service>
 
         <receiver
             android:name=".live.BootReceiver"
