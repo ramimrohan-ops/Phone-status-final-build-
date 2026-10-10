@@ -80,7 +80,7 @@ fun DebugTab(onOpenHomeDragon: () -> Unit) {
         Spacer(Modifier.height(10.dp))
         Text(
             text = when {
-                !connected -> "No message from Home Dragon yet, so updates are paused. Nothing is sent while you are away from the home screen."
+                !connected -> "Home Dragon has not answered yet, so updates are paused. Open Home Dragon and check that its icon finder is on."
                 allowed -> "Home Dragon says the home screen is on top, so updates should run."
                 else -> "Updates are paused. Home Dragon reports: $why."
             },
@@ -97,7 +97,7 @@ fun DebugTab(onOpenHomeDragon: () -> Unit) {
         Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
             DetailRow(
                 "Home Dragon link",
-                if (connected) "Message received" else "No message yet",
+                if (connected) "Message received" else "No answer yet",
                 if (connected) Palette.Battery else Palette.TempWarm,
             )
             DetailRow("Home Dragon says", if (connected) why else "—")

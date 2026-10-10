@@ -82,15 +82,7 @@ class LiveUpdateService : Service() {
             buildNotification(),
             ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE,
         )
-        if (loopJob == null) {
-            loopJob = scope.launch { loop() }
-            scope.launch {
-                while (true) {
-                    delay(1_000L)
-                    ForegroundGate.checkStale()
-                }
-            }
-        }
+        if (loopJob == null) loopJob = scope.launch { loop() }
         return START_STICKY
     }
 

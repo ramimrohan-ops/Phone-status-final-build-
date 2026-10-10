@@ -469,8 +469,7 @@ private fun SmartPauseSection(on: Boolean, onOpenSettings: () -> Unit) {
             "Live updates run only while Home Dragon sees your home screen on top, unlocked, with no keyboard or notification shade. " +
                 "The Debug tab shows what it reports."
         } else {
-            "Updates stay paused until Home Dragon reports the home screen. Open Home Dragon, make sure its icon finder is on, " +
-                "then go to your home screen. Nothing is sent while you are away from home, so this can also just mean that."
+            "Updates stay paused until Home Dragon answers. Open Home Dragon and make sure its icon finder is on."
         },
         color = Palette.TextLabel,
         fontSize = 13.sp,

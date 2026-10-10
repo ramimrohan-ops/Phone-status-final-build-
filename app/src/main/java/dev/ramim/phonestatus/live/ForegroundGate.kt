@@ -15,17 +15,19 @@ data class SwitchEvent(val time: Long, val pkg: String, val decision: String)
 /**
  * Shared "should the live updates run right now?" switch.
  *
- * The Home Dragon app watches the screen and sends a small yes/no message: "the home screen is on top, the phone is
- * unlocked, the screen is on, no keyboard and no notification shade". While it says yes it repeats the message every 2 s.
- * Updates run only while a fresh "yes" is in. No message yet, a "no", or no message for 6 s all mean paused.
+ * The Home Dragon app watches the screen and sends a small yes/no message when the answer changes: "the home screen is
+ * on top, the phone is unlocked, the screen is on, no keyboard and no notification shade". Every message is answered
+ * with "received", and Home Dragon sends it again if that answer does not come. When this app starts it asks Home Dragon
+ * for the current state. Updates run while the last answer is "yes"; no answer yet or "no" means paused.
  * Everything here is also shown on the Debug tab.
  */
 object ForegroundGate {
 
     const val ACTION = "com.ramim.homedragon.HOME_STATE"
+    const val ACTION_ACK = "dev.ramim.phonestatus.HOME_ACK"
+    const val ACTION_ASK = "dev.ramim.phonestatus.HOME_ASK"
     const val HOME_DRAGON_PACKAGE = "com.ramim.homedragon"
     private const val MAX_EVENTS = 40
-    private const val STALE_MS = 6_000L
 
     private val _connected = MutableStateFlow(false)
 
@@ -55,7 +57,33 @@ object ForegroundGate {
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action != ACTION) return
-            onSignal(intent.getBooleanExtra("home", false), intent.getStringExtra("why") ?: "")
+            val home = intent.getBooleanExtra("home", false)
+            val seq = intent.getLongExtra("seq", 0L)
+            onSignal(home, intent.getStringExtra("why") ?: "")
+            reply(context, seq, home)
+        }
+    }
+
+    /** Tells Home Dragon that message number [seq] arrived and which state it carried. */
+    private fun reply(ctx: Context, seq: Long, home: Boolean) {
+        try {
+            ctx.sendBroadcast(
+                Intent(ACTION_ACK)
+                    .setPackage(HOME_DRAGON_PACKAGE)
+                    .putExtra("seq", seq)
+                    .putExtra("home", home),
+            )
+            logEvent("received #$seq (${if (home) "home" else "not home"})", "ACK sent")
+        } catch (_: Exception) {
+        }
+    }
+
+    /** Asks Home Dragon for the state it is in right now; it answers with an ordinary message. */
+    fun ask(ctx: Context) {
+        try {
+            ctx.applicationContext.sendBroadcast(Intent(ACTION_ASK).setPackage(HOME_DRAGON_PACKAGE))
+            logEvent("asked Home Dragon for the state", "INFO")
+        } catch (_: Exception) {
         }
     }
 
@@ -72,7 +100,9 @@ object ForegroundGate {
             )
             registered = true
         } catch (_: Exception) {
+            return
         }
+        ask(ctx)
     }
 
     @Synchronized
@@ -84,16 +114,6 @@ object ForegroundGate {
         if (changed) logEvent(text, if (home) "RUN" else "PAUSED")
         _why.value = text
         _allowed.value = home
-    }
-
-    /** Called about once a second: a "yes" with no repeat for 6 s means Home Dragon stopped, so pause. */
-    @Synchronized
-    fun checkStale() {
-        if (_allowed.value && System.currentTimeMillis() - _lastSignalAt.value > STALE_MS) {
-            _allowed.value = false
-            _why.value = "Signal lost: nothing from Home Dragon for 6 s"
-            logEvent("Signal lost (6 s)", "PAUSED")
-        }
     }
 
     @Synchronized
