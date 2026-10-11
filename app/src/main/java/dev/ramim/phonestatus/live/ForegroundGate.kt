@@ -15,7 +15,8 @@ data class SwitchEvent(val time: Long, val pkg: String, val decision: String)
  * The Home Dragon app watches the screen and sends a small yes/no message when the answer changes: "the home screen is
  * on top, the phone is unlocked, the screen is on, no keyboard and no notification shade". Every message is answered
  * with "received", and Home Dragon sends it again if that answer does not come. When this app starts it asks Home Dragon
- * for the current state. Updates run while the last answer is "yes"; no answer yet or "no" means paused.
+ * for the current state. The message also carries the home-screen page number. Updates run while the last answer is "yes"
+ * and the page is [WIDGET_PAGE]; no answer yet, "no", or any other page means paused.
  * Everything here is also shown on the Debug tab.
  */
 object ForegroundGate {
@@ -25,6 +26,9 @@ object ForegroundGate {
     const val ACTION_ASK = "dev.ramim.phonestatus.HOME_ASK"
     const val HOME_DRAGON_PACKAGE = "com.ramim.homedragon"
     private const val MAX_EVENTS = 40
+
+    /** The home-screen page the widget sits on. The live updates run only while Home Dragon reports this page. */
+    const val WIDGET_PAGE = 2
 
     private val _connected = MutableStateFlow(false)
 
@@ -40,6 +44,11 @@ object ForegroundGate {
 
     /** The reason Home Dragon (or the app) gave for the current answer. */
     val why: StateFlow<String> = _why.asStateFlow()
+
+    private val _pageText = MutableStateFlow("— (no signal) → paused")
+
+    /** The page line for the Debug tab, for example "2 of 5 → running". */
+    val pageText: StateFlow<String> = _pageText.asStateFlow()
 
     private val _lastSignalAt = MutableStateFlow(0L)
     val lastSignalAt: StateFlow<Long> = _lastSignalAt.asStateFlow()
@@ -59,7 +68,7 @@ object ForegroundGate {
         if (intent.action != ACTION) return
         val home = intent.getBooleanExtra("home", false)
         val seq = intent.getLongExtra("seq", 0L)
-        onSignal(home, intent.getStringExtra("why") ?: "")
+        onSignal(home, intent.getStringExtra("why") ?: "", intent.getIntExtra("page", 0), intent.getIntExtra("pages", 0))
         reply(ctx, seq, home)
     }
 
@@ -95,14 +104,29 @@ object ForegroundGate {
     }
 
     @Synchronized
-    private fun onSignal(home: Boolean, reason: String) {
-        val text = reason.ifEmpty { if (home) "home on top" else "not home" }
-        val changed = !_connected.value || home != _allowed.value || text != _why.value
+    private fun onSignal(home: Boolean, reason: String, page: Int, pages: Int) {
+        val pageName = if (pages > 0) "$page of $pages" else "$page"
+        // The widget runs only on its own page. Home on another page, or a home message without a page number, pauses it.
+        val run = home && page == WIDGET_PAGE
+        val text = when {
+            !home -> reason.ifEmpty { "not home" }
+            page <= 0 -> "home, page unknown"
+            page != WIDGET_PAGE -> "home, page $pageName (widget is on page $WIDGET_PAGE)"
+            else -> "home, page $pageName"
+        }
+        val line = when {
+            !home -> "— (not home) → paused"
+            page <= 0 -> "— (page unknown) → paused"
+            run -> "$pageName → running"
+            else -> "$pageName → paused"
+        }
+        val changed = !_connected.value || run != _allowed.value || text != _why.value
         _connected.value = true
         _lastSignalAt.value = System.currentTimeMillis()
-        if (changed) logEvent(text, if (home) "RUN" else "PAUSED")
+        if (changed) logEvent(text, if (run) "RUN" else "PAUSED")
         _why.value = text
-        _allowed.value = home
+        _pageText.value = line
+        _allowed.value = run
     }
 
     @Synchronized

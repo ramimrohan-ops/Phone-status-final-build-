@@ -16,7 +16,6 @@ import dev.ramim.phonestatus.data.TopApps
 import dev.ramim.phonestatus.live.LiveStats
 import dev.ramim.phonestatus.ui.f1
 import java.util.Locale
-import kotlin.math.max
 import kotlin.math.roundToInt
 
 /**
@@ -39,8 +38,8 @@ object WidgetRenderer {
     private const val GREY = 0xFF4A5270.toInt()
     private const val SOFT_WHITE = 0xFFE6ECFA.toInt()
 
-    /** Highest CPU clock seen so far (at least 2 GHz), the full circle of the small CPU ring. */
-    @Volatile private var cpuMaxSeenMhz = 2000
+    /** The CPU ring turns amber from this clock on: the top clock of this phone, 2.4 GHz (anything that rounds to 2.4 or more). */
+    private const val CPU_TOP_MHZ = 2350
 
     private class AppRow(val row: Int, val rank: Int, val name: Int, val mb: Int)
 
@@ -96,13 +95,14 @@ object WidgetRenderer {
         v.setTextViewText(R.id.w_ram_val, String.format(Locale.US, "%.1f", s.ram.usedBytes / GIB))
         v.setTextViewText(R.id.w_ram_sub, String.format(Locale.US, "of %.1fG", s.ram.totalBytes / GIB))
 
-        // ---- CPU ring (clock speed against the highest clock seen) ----
+        // ---- CPU ring: a complete ring in one solid colour, mint, amber only at the top clock ----
         val mhz = t.freq.cpuPeakMhz
-        if (mhz != null) cpuMaxSeenMhz = max(cpuMaxSeenMhz, mhz)
-        v.setImageViewBitmap(
-            R.id.w_cpu_ring,
-            Rings.arc(ring, if (mhz == null) 0f else mhz / cpuMaxSeenMhz.toFloat(), MINT, 0.10f),
-        )
+        val cpuColor = when {
+            mhz == null -> GREY
+            mhz >= CPU_TOP_MHZ -> AMBER
+            else -> MINT
+        }
+        v.setImageViewBitmap(R.id.w_cpu_ring, Rings.full(ring, cpuColor, 0.10f))
         v.setTextViewText(R.id.w_cpu_ghz, if (mhz == null) "—" else String.format(Locale.US, "%.1f", mhz / 1000f))
 
         // ---- Top apps: four lines, or one short message when there is no list yet ----

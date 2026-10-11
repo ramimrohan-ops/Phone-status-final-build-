@@ -2,7 +2,7 @@
 <!--
   3 x 2 widget. A 3 x 2 on this phone's launcher is about 276 x 187 dp. Nothing is clickable except the refresh button (w_refresh).
   left  = 2 x 2 (72 dp each): battery ring, current-draw solid circle with a thin halo / RAM ring, CPU clock ring.
-  right = one bar (TOP APPS label + Refresh pill, the whole bar is the tap area), 4 top apps, storage bar, CPU and GPU temperatures
+  right = one bar (APPS label + Refresh pill, the whole bar is the tap area), 4 top apps, storage bar, CPU and GPU temperatures
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/w_root"
@@ -216,7 +216,7 @@
         android:layout_weight="1"
         android:orientation="vertical">
 
-        <!-- One bar: TOP APPS label on the left, Refresh pill on the right. The whole bar is the tap area. -->
+        <!-- One bar: APPS label on the left, Refresh pill on the right. The whole bar is the tap area. -->
         <FrameLayout
             android:id="@+id/w_refresh"
             android:layout_width="match_parent"
@@ -230,7 +230,7 @@
                 android:fontFamily="sans-serif-medium"
                 android:includeFontPadding="false"
                 android:letterSpacing="0.08"
-                android:text="TOP APPS"
+                android:text="APPS"
                 android:textColor="@color/text_label"
                 android:textSize="6.5sp" />
             <TextView

@@ -5,7 +5,7 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.RectF
 
-/** Thin progress rings and the solid current-draw circle, drawn as bitmaps (a widget cannot draw them itself). Each picture is reused while its look is unchanged. */
+/** Thin progress rings, the full solid CPU ring and the solid current-draw circle, drawn as bitmaps (a widget cannot draw them itself). Each picture is reused while its look is unchanged. */
 object Rings {
 
     private const val TRACK = 0xFF2A2F45.toInt()
@@ -39,6 +39,26 @@ object Rings {
             val sweep = (360f * steps / 100f).coerceAtLeast(6f)
             c.drawArc(box, -90f, sweep, false, paint)
         }
+        cache[key] = bmp
+        return bmp
+    }
+
+    /** A complete ring [px] pixels wide in one solid [color], hollow inside, with no track. [stroke] is the line width as a share of the size. */
+    @Synchronized
+    fun full(px: Int, color: Int, stroke: Float): Bitmap {
+        val key = "full|$px|$color|$stroke"
+        cache[key]?.let { return it }
+        if (cache.size > 24) cache.clear()
+
+        val bmp = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
+        val w = px * stroke
+        val inset = w / 2f + 1f
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = w
+            this.color = color
+        }
+        Canvas(bmp).drawOval(RectF(inset, inset, px - inset, px - inset), paint)
         cache[key] = bmp
         return bmp
     }

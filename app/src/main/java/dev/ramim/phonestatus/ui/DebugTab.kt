@@ -51,6 +51,7 @@ fun DebugTab(onOpenHomeDragon: () -> Unit) {
     val allowed by ForegroundGate.allowed.collectAsStateWithLifecycle()
     val events by ForegroundGate.events.collectAsStateWithLifecycle()
     val why by ForegroundGate.why.collectAsStateWithLifecycle()
+    val pageText by ForegroundGate.pageText.collectAsStateWithLifecycle()
     val lastSignal by ForegroundGate.lastSignalAt.collectAsStateWithLifecycle()
     val status by LiveDebug.status.collectAsStateWithLifecycle()
     val rate by LiveDebug.rate.collectAsStateWithLifecycle()
@@ -89,7 +90,7 @@ fun DebugTab(onOpenHomeDragon: () -> Unit) {
         Text(
             text = when {
                 !connected -> "Home Dragon has not answered yet, so updates are paused. Open Home Dragon and check that its icon finder is on."
-                allowed -> "Home Dragon says the home screen is on top, so updates should run."
+                allowed -> "Home Dragon says the home screen is on top, on page ${ForegroundGate.WIDGET_PAGE}, so updates should run."
                 else -> "Updates are paused. Home Dragon reports: $why."
             },
             color = if (!allowed) Palette.TempWarm else Palette.TextLabel,
@@ -109,6 +110,7 @@ fun DebugTab(onOpenHomeDragon: () -> Unit) {
                 if (connected) Palette.Battery else Palette.TempWarm,
             )
             DetailRow("Home Dragon says", if (connected) why else "—")
+            DetailRow("Page", pageText, if (allowed) Palette.Battery else Palette.TempWarm)
             DetailRow("Last message", if (lastSignal == 0L) "never" else "${clock(lastSignal)} (${ago(now, lastSignal)})")
             DetailRow("Updates allowed", if (allowed) "Yes" else "No (paused)", if (allowed) Palette.Battery else Palette.TempWarm)
             DetailRow("Widget loop", status)

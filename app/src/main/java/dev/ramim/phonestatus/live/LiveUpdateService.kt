@@ -44,7 +44,7 @@ object LiveStats {
 /**
  * Pushes the home-screen widget every 3 seconds while the screen is on.
  * The CPU and GPU temperatures are read about every 10 seconds and held in between; the CPU clock and everything else every 3 seconds.
- * Runs only while Home Dragon says the home screen is on top (and the screen is on). Pauses otherwise, and stops itself when no widget is placed.
+ * Runs only while Home Dragon says the home screen is on top on the widget's page (page 2) and the screen is on. Pauses otherwise, and stops itself when no widget is placed.
  */
 class LiveUpdateService : Service() {
 

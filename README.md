@@ -29,10 +29,10 @@ Grant root to Phone Status in your root manager the first time. The app waits up
 
 ## Widget (3x2, live, every 3 seconds)
 
-- One size: a 3x2 widget (resizable a little). Left: battery ring, a solid current-draw circle (green, amber or red by the drain), RAM ring and CPU clock ring. Right: a Top apps bar with a Refresh pill, the 4 apps using the most memory, a storage bar, and CPU and GPU temperatures.
-- Only the Top apps bar is tappable: it reads the memory report once (through Shizuku) and redraws the widget.
-- A background service redraws the widget every 3 seconds (temperatures about every 10 seconds) **only while Home Dragon says the home screen is on top and the screen is on**. Android's own 30-minute update, adding or resizing the widget, and the Refresh tap also redraw it once.
-- Home Dragon tells Phone Status when the home screen is on top with a broadcast (`com.ramim.homedragon.HOME_STATE`); Phone Status answers with `dev.ramim.phonestatus.HOME_ACK`, and Home Dragon can ask for the state again with `dev.ramim.phonestatus.HOME_ASK`.
+- One size: a 3x2 widget (resizable a little). Left: battery ring, a solid current-draw circle (green, amber or red by the drain), RAM ring and CPU clock ring (a complete solid mint ring, amber at the top clock of 2.4 GHz). Right: an APPS bar with a Refresh pill, the 4 apps using the most memory, a storage bar, and CPU and GPU temperatures.
+- Only the APPS bar is tappable: it reads the memory report once (through Shizuku) and redraws the widget.
+- A background service redraws the widget every 3 seconds (temperatures about every 10 seconds) **only while Home Dragon says the home screen is on top, on page 2 (where the widget sits), and the screen is on**. Any other page, or no message, pauses it. Android's own 30-minute update, adding or resizing the widget, and the Refresh tap also redraw it once.
+- Home Dragon tells Phone Status when the home screen is on top with a broadcast (`com.ramim.homedragon.HOME_STATE`, carrying the page number as `page` and `pages`); Phone Status answers with `dev.ramim.phonestatus.HOME_ACK`, and Home Dragon can ask for the state again with `dev.ramim.phonestatus.HOME_ASK`.
 - The service shows a small silent notification. Android requires it for any always-running service.
 - Top apps need Shizuku (start it with wireless debugging, allow Phone Status once). Without it the widget shows a short note instead of the list.
 - Root, when granted, is used to read CPU/GPU temperatures and clocks.
