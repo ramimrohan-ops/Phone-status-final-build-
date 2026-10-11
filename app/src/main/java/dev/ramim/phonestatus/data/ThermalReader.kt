@@ -114,7 +114,6 @@ object ThermalReader {
         return ThermalInfo(
             cpuC = cpu,
             gpuC = gpu,
-            hottest = zones.maxByOrNull { it.celsius },
             sensorCount = zones.size,
             viaRoot = viaRoot,
             rootState = rootState,

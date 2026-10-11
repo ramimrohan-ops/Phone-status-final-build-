@@ -39,7 +39,7 @@ object WidgetRenderer {
     private const val SOFT_WHITE = 0xFFE6ECFA.toInt()
 
     /** The CPU ring turns amber from this clock on: the top clock of this phone, 2.4 GHz (anything that rounds to 2.4 or more). */
-    private const val CPU_TOP_MHZ = 2350
+    const val CPU_TOP_MHZ = 2350
 
     private class AppRow(val row: Int, val rank: Int, val name: Int, val mb: Int)
 

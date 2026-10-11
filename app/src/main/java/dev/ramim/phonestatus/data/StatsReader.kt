@@ -6,11 +6,9 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.hardware.display.DisplayManager
 import android.os.BatteryManager
-import android.os.Build
 import android.os.Environment
 import android.os.StatFs
 import android.view.Display
-import java.io.File
 import kotlin.math.abs
 
 /** Reads everything that does NOT need root. All calls are cheap and safe to poll. */
@@ -44,23 +42,6 @@ object StatsReader {
         val charging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
             status == BatteryManager.BATTERY_STATUS_FULL
 
-        val plug = when (i.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0)) {
-            BatteryManager.BATTERY_PLUGGED_AC -> "AC charger"
-            BatteryManager.BATTERY_PLUGGED_USB -> "USB"
-            BatteryManager.BATTERY_PLUGGED_WIRELESS -> "Wireless"
-            else -> "On battery"
-        }
-
-        val health = when (i.getIntExtra(BatteryManager.EXTRA_HEALTH, 0)) {
-            BatteryManager.BATTERY_HEALTH_GOOD -> "Good"
-            BatteryManager.BATTERY_HEALTH_OVERHEAT -> "Overheat"
-            BatteryManager.BATTERY_HEALTH_DEAD -> "Dead"
-            BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE -> "Over voltage"
-            BatteryManager.BATTERY_HEALTH_COLD -> "Cold"
-            BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE -> "Failure"
-            else -> "Unknown"
-        }
-
         val bm = ctx.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
         val raw = safeInt(bm, BatteryManager.BATTERY_PROPERTY_CURRENT_NOW) ?: Int.MIN_VALUE
         // Most devices report microamps, a few report milliamps.
@@ -77,23 +58,13 @@ object StatsReader {
         }
         val capacityMah = RealCapacity.fullMah() ?: CapacityEstimator.update(ctx, counterUah, pct)
 
-        // Android 14+ extras; older versions simply report nothing.
-        val cycles = if (Build.VERSION.SDK_INT >= 34) {
-            i.getIntExtra(BatteryManager.EXTRA_CYCLE_COUNT, -1).takeIf { it > 0 }
-        } else null
-
         return BatteryInfo(
             level = pct,
             charging = charging,
-            plug = plug,
             tempC = i.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, 0) / 10f,
-            voltageV = i.getIntExtra(BatteryManager.EXTRA_VOLTAGE, 0) / 1000f,
             currentMa = currentMa,
-            health = health,
-            technology = i.getStringExtra(BatteryManager.EXTRA_TECHNOLOGY).orEmpty(),
             capacityMah = capacityMah,
             designMah = DesignCapacity.read(ctx),
-            cycleCount = cycles,
         )
     }
 
@@ -102,24 +73,9 @@ object StatsReader {
         val mi = ActivityManager.MemoryInfo()
         am.getMemoryInfo(mi)
 
-        var swapTotal = 0L
-        var swapFree = 0L
-        try {
-            File("/proc/meminfo").forEachLine { line ->
-                when {
-                    line.startsWith("SwapTotal:") -> swapTotal = kbToBytes(line)
-                    line.startsWith("SwapFree:") -> swapFree = kbToBytes(line)
-                }
-            }
-        } catch (_: Exception) {
-            // /proc/meminfo unreadable: just hide swap
-        }
-
         return RamInfo(
             totalBytes = mi.totalMem,
             usedBytes = (mi.totalMem - mi.availMem).coerceAtLeast(0L),
-            swapTotalBytes = swapTotal,
-            swapUsedBytes = (swapTotal - swapFree).coerceAtLeast(0L),
         )
     }
 
@@ -140,7 +96,4 @@ object StatsReader {
             dpi = ctx.resources.displayMetrics.densityDpi,
         )
     }
-
-    private fun kbToBytes(line: String): Long =
-        (line.filter { it.isDigit() }.toLongOrNull() ?: 0L) * 1024L
 }

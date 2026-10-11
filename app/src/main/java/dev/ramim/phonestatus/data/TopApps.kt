@@ -192,17 +192,6 @@ object TopApps {
 
     fun fmtMb(mb: Int): String =
         if (mb >= 1024) String.format(Locale.US, "%.1f GB", mb / 1024f) else "$mb MB"
-
-    /** "12s", "3m", "" when never read. */
-    fun ageText(at: Long, now: Long = System.currentTimeMillis()): String {
-        if (at == 0L) return ""
-        val s = ((now - at) / 1000L).coerceAtLeast(0L)
-        return when {
-            s < 60 -> "${s}s"
-            s < 3600 -> "${s / 60}m"
-            else -> "${s / 3600}h"
-        }
-    }
 }
 
 /** Shizuku as a helper that runs one shell command for us. Everything is wrapped: a missing Shizuku never crashes. */

@@ -1,32 +1,24 @@
 package dev.ramim.phonestatus.ui
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-/** Small building blocks for the minimal look: hairlines, spaced-out labels, thin bars, LED dots. */
+/** The few building blocks of the plain look: a hairline, a small caption, a label-and-value line and a tappable text. */
 
 @Composable
 fun Hairline() {
@@ -39,7 +31,7 @@ fun Hairline() {
 }
 
 @Composable
-fun Label(text: String, modifier: Modifier = Modifier, color: Color = Palette.TextLabel) {
+fun Label(text: String, modifier: Modifier = Modifier, color: Color = Palette.TextDim) {
     Text(
         text = text.uppercase(),
         color = color,
@@ -50,80 +42,37 @@ fun Label(text: String, modifier: Modifier = Modifier, color: Color = Palette.Te
     )
 }
 
+/** Grey label on the left, the value on the right. */
 @Composable
-fun ThinBar(
-    fraction: Float,
-    color: Color,
-    modifier: Modifier = Modifier,
-    height: Dp = 3.dp,
-) {
-    val animated by animateFloatAsState(
-        targetValue = fraction.coerceIn(0f, 1f),
-        animationSpec = tween(durationMillis = 600),
-        label = "thin",
-    )
-    val shape = RoundedCornerShape(50)
-    Box(
-        modifier
-            .fillMaxWidth()
-            .height(height)
-            .clip(shape)
-            .background(Color(0x1FFFFFFF)),
-    ) {
-        Box(
-            Modifier
-                .fillMaxHeight()
-                .fillMaxWidth(animated)
-                .clip(shape)
-                .background(color),
-        )
-    }
-}
-
-/** LED dot: a solid core with a soft halo. */
-@Composable
-fun Led(color: Color, size: Dp = 16.dp) {
-    Box(
-        Modifier
-            .size(size)
-            .clip(CircleShape)
-            .background(color.copy(alpha = 0.22f)),
-        contentAlignment = Alignment.Center,
-    ) {
-        Box(
-            Modifier
-                .size(size * 0.5f)
-                .clip(CircleShape)
-                .background(color),
-        )
-    }
-}
-
-@Composable
-fun Metric(
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier,
-    sub: String? = null,
-    valueColor: Color = Palette.TextPrimary,
-) {
-    Column(modifier) {
-        Label(label)
-        Spacer(Modifier.height(4.dp))
-        Text(value, color = valueColor, fontSize = 17.sp, fontWeight = FontWeight.Medium)
-        if (sub != null) {
-            Text(sub, color = Palette.TextLabel, fontSize = 11.sp)
-        }
-    }
-}
-
-@Composable
-fun DetailRow(label: String, value: String, valueColor: Color = Palette.TextPrimary) {
+fun Line(label: String, value: String, valueColor: Color = Palette.TextPrimary) {
     Row(
-        Modifier.fillMaxWidth(),
+        Modifier
+            .fillMaxWidth()
+            .padding(vertical = 7.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, color = Palette.TextLabel, fontSize = 13.sp)
-        Text(value, color = valueColor, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+        Text(label, color = Palette.TextLabel, fontSize = 15.sp)
+        Text(
+            value,
+            color = valueColor,
+            fontSize = 15.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(start = 16.dp),
+        )
     }
+}
+
+/** A tappable accent-coloured text. */
+@Composable
+fun Action(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, color: Color = Palette.Accent) {
+    Text(
+        text,
+        color = color,
+        fontSize = 14.sp,
+        modifier = modifier
+            .clickable(onClick = onClick)
+            .padding(vertical = 10.dp),
+    )
 }

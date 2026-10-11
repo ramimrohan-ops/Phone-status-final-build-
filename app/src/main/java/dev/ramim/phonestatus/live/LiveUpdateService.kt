@@ -29,12 +29,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 /** Last thermal reading, so the widget can draw instantly without waiting on root. */
 object LiveStats {
@@ -44,13 +44,16 @@ object LiveStats {
 /**
  * Pushes the home-screen widget every 3 seconds while the screen is on.
  * The CPU and GPU temperatures are read about every 10 seconds and held in between; the CPU clock and everything else every 3 seconds.
- * Runs only while Home Dragon says the home screen is on top on the widget's page (page 2) and the screen is on. Pauses otherwise, and stops itself when no widget is placed.
+ * Runs only while Home Dragon says "Run" (home screen on top, on the widget's page) and the screen is on. It shows its notification
+ * only while it runs: on "Don't run" or a dark screen the notification is removed at once and comes back with the next "Run".
+ * Stops itself when no widget is placed.
  */
 class LiveUpdateService : Service() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val screenOn = MutableStateFlow(true)
     private var loopJob: Job? = null
+    @Volatile private var foreground = false
 
     private val screenReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -79,13 +82,41 @@ class LiveUpdateService : Service() {
         )
     }
 
+    /** Shows the notification (the service is a foreground service while it is shown). False when Android refuses a background start. */
+    private fun goForeground(): Boolean {
+        try {
+            ServiceCompat.startForeground(
+                this,
+                NOTIFICATION_ID,
+                buildNotification(),
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE,
+            )
+            foreground = true
+            LiveDebug.setNotification(true)
+            return true
+        } catch (e: Exception) {
+            LiveDebug.setStatus("Could not show the notification: " + e.javaClass.simpleName)
+            return false
+        }
+    }
+
+    /** Removes the notification; the service stays alive (as an ordinary service) and waits for the next "Run". */
+    private fun leaveForeground() {
+        if (!foreground) return
+        foreground = false
+        LiveDebug.setNotification(false)
+        try {
+            ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+        } catch (_: Exception) {
+        }
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        ServiceCompat.startForeground(
-            this,
-            NOTIFICATION_ID,
-            buildNotification(),
-            ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE,
-        )
+        // Android requires the notification right after every start (the loop removes it again at once when it is not "Run").
+        if (!goForeground()) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
         if (loopJob == null) loopJob = scope.launch { loop() }
         return START_STICKY
     }
@@ -97,14 +128,19 @@ class LiveUpdateService : Service() {
         var lastThermal: ThermalInfo? = null
         var lastThermalAt = 0L
 
+        val shouldRun = combine(screenOn, ForegroundGate.allowed) { on, ok -> on && ok }
         while (true) {
-            // Suspends here while the screen is off or another app is in front.
-            val shouldRun = combine(screenOn, ForegroundGate.allowed) { on, ok -> on && ok }
+            // Suspends here while the screen is off or Home Dragon says "Don't run"; the notification is gone meanwhile.
             if (!shouldRun.first()) {
                 LiveDebug.setStatus(
                     if (!screenOn.value) "Paused: screen is off" else "Paused: " + ForegroundGate.why.value,
                 )
+                leaveForeground()
                 shouldRun.first { it }
+            }
+            if (!foreground && !goForeground()) {            // "Run" again: the notification comes back
+                stopSelf()
+                return
             }
             LiveDebug.setStatus("Running")
             val t0 = SystemClock.elapsedRealtime()
@@ -130,7 +166,8 @@ class LiveUpdateService : Service() {
             LiveDebug.tick()
 
             val spent = SystemClock.elapsedRealtime() - t0
-            delay((UPDATE_EVERY_MS - spent).coerceAtLeast(150L))
+            // Wait for the next update, but wake at once if the answer turns to "Don't run" (the notification must go away now).
+            withTimeoutOrNull((UPDATE_EVERY_MS - spent).coerceAtLeast(150L)) { shouldRun.first { !it } }
         }
     }
 
@@ -138,7 +175,7 @@ class LiveUpdateService : Service() {
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         nm.createNotificationChannel(
             NotificationChannel(CHANNEL_ID, "Live widget", NotificationManager.IMPORTANCE_MIN).apply {
-                description = "Keeps the home-screen widget updating every 3 seconds"
+                description = "Shown only while the home-screen widget is updating every 3 seconds"
                 setShowBadge(false)
             },
         )
@@ -151,7 +188,8 @@ class LiveUpdateService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat)
             .setContentTitle("Phone Status")
-            .setContentText("Live widget, updating every 3 seconds while the screen is on")
+            .setContentText("Live widget, updating every 3 seconds (page 2 only)")
+            .addAction(R.drawable.ic_stat, "Open", open)
             .setOngoing(true)
             .setSilent(true)
             .setPriority(NotificationCompat.PRIORITY_MIN)
@@ -177,6 +215,7 @@ class LiveUpdateService : Service() {
 
     override fun onDestroy() {
         LiveDebug.setServiceUp(false)
+        LiveDebug.setNotification(false)
         try {
             unregisterReceiver(screenReceiver)
         } catch (_: Exception) {

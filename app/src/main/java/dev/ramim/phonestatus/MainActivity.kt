@@ -68,7 +68,7 @@ class MainActivity : ComponentActivity() {
                 val stats by vm.stats.collectAsStateWithLifecycle()
                 val thermal by vm.thermal.collectAsStateWithLifecycle()
                 val topApps by TopApps.state.collectAsStateWithLifecycle()
-                val smartPause by ForegroundGate.connected.collectAsStateWithLifecycle()
+                val linked by ForegroundGate.connected.collectAsStateWithLifecycle()
                 Dashboard(
                     stats = stats,
                     thermal = thermal,
@@ -79,7 +79,7 @@ class MainActivity : ComponentActivity() {
                     onAllowBackground = { askBackground() },
                     onAddWidget = { requestPinWidget(this) },
                     onRetryRoot = vm::retryRoot,
-                    smartPause = smartPause,
+                    linked = linked,
                     onOpenHomeDragon = {
                         val launch = packageManager.getLaunchIntentForPackage(ForegroundGate.HOME_DRAGON_PACKAGE)
                         if (launch != null) {
@@ -97,8 +97,8 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         ForegroundGate.register(this)
         batteryExempt = readExempt()
-        // The app is in the foreground here, so Android always allows starting the live service.
-        LiveUpdateService.startIfWidgets(this)
+        // The live service (and its notification) exists only while Home Dragon says "Run"; the message itself starts it.
+        if (ForegroundGate.allowed.value) LiveUpdateService.startIfWidgets(this)
     }
 
     /** Shows Android's own "let this app run in the background" question; falls back to the settings list. */

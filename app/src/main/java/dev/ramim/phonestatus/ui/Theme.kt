@@ -5,31 +5,25 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
+/** One flat dark background, off-white text, one mint accent and amber / red only for warnings. */
 object Palette {
-    val BgTop = Color(0xFF0E111A)
-    val BgBottom = Color(0xFF06070B)
+    val Bg = Color(0xFF0B0C10)
     val Hairline = Color(0x1AFFFFFF)
-    val TextLabel = Color(0xFF7B839F)
-    val SoftWhite = Color(0xFFD9DEEE)
-
-    val TextPrimary = Color(0xFFF2F5FF)
-    val TextSecondary = Color(0xFF9AA4C2)
-
-    val Battery = Color(0xFF3DF5A7)
-    val BatteryLow = Color(0xFFFF5470)
-
-    val TempOk = Color(0xFF3DF5A7)
-    val TempWarm = Color(0xFFFFB454)
-    val TempHot = Color(0xFFFF5470)
+    val TextLabel = Color(0xFF7A8298)
+    val TextDim = Color(0xFF585F74)
+    val TextPrimary = Color(0xFFEEF1F8)
+    val Accent = Color(0xFF3DF5A7)
+    val Warn = Color(0xFFFFB454)
+    val Hot = Color(0xFFFF5470)
 }
 
 @Composable
 fun PhoneStatusTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = darkColorScheme(
-            primary = Palette.Battery,
-            background = Palette.BgBottom,
-            surface = Palette.BgTop,
+            primary = Palette.Accent,
+            background = Palette.Bg,
+            surface = Palette.Bg,
             onBackground = Palette.TextPrimary,
             onSurface = Palette.TextPrimary,
         ),

@@ -5,21 +5,14 @@ import kotlin.math.roundToInt
 data class BatteryInfo(
     val level: Int = 0,
     val charging: Boolean = false,
-    val plug: String = "On battery",
     val tempC: Float = 0f,
-    val voltageV: Float = 0f,
     val currentMa: Int? = null,
-    val health: String = "Unknown",
-    val technology: String = "",
     val capacityMah: Int? = null, // estimated (or measured, if readable) full capacity
     val designMah: Int? = null, // factory capacity, if the phone exposes it
-    val cycleCount: Int? = null, // Android 14+, if the phone reports it
-    val sohPct: Int? = null, // system-reported state of health, Android 14+, if supported
 ) {
-    /** Battery health in percent: the system's value if it has one, else capacity / design. */
+    /** Battery health in percent: capacity / design capacity, when both are known. */
     val healthPct: Int?
         get() {
-            if (sohPct != null) return sohPct
             val cap = capacityMah
             val design = designMah
             if (cap == null || design == null || design <= 0) return null
@@ -30,8 +23,6 @@ data class BatteryInfo(
 data class RamInfo(
     val totalBytes: Long = 0L,
     val usedBytes: Long = 0L,
-    val swapTotalBytes: Long = 0L,
-    val swapUsedBytes: Long = 0L,
 ) {
     val fraction: Float get() = if (totalBytes > 0) usedBytes.toFloat() / totalBytes else 0f
 }
@@ -40,7 +31,6 @@ data class StorageInfo(
     val totalBytes: Long = 0L,
     val usedBytes: Long = 0L,
 ) {
-    val freeBytes: Long get() = (totalBytes - usedBytes).coerceAtLeast(0L)
     val fraction: Float get() = if (totalBytes > 0) usedBytes.toFloat() / totalBytes else 0f
 }
 
@@ -71,7 +61,6 @@ data class FreqInfo(
 data class ThermalInfo(
     val cpuC: Float? = null,
     val gpuC: Float? = null,
-    val hottest: ThermalZone? = null,
     val sensorCount: Int = 0,
     val viaRoot: Boolean = false,
     val rootState: RootState = RootState.UNKNOWN,
