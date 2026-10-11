@@ -23,7 +23,7 @@ If the build fails, copy the red error lines from the Actions log and send them 
 | Refresh rate (live measured + system mode + supported rates) | Choreographer frames, Display | No |
 | CPU / GPU / hottest sensor temperature | /sys/class/thermal via `su` | **Yes** |
 | Battery capacity estimate, design capacity, health, cycles | Fuel-gauge charge counter ÷ level (smoothed, saved between runs); design capacity, health and cycles only if the phone reports them | No |
-| CPU clock per core, GPU clock | /sys/devices/system/cpu, /sys/class/kgsl (GPU path varies by chip) | **Yes** |
+| CPU clock per core | /sys/devices/system/cpu | **Yes** |
 
 Grant root to Phone Status in your root manager the first time. The app waits up to 15 s for you to tap Grant.
 
