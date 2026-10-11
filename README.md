@@ -47,3 +47,9 @@ Grant root to Phone Status in your root manager the first time. The app waits up
 - **Notification only on page 2.** The foreground notification is shown only while the widget runs and removed at once on "Don't run" (the wait for the next update is cut short). Android requires a notification for every start, so a start that is not "Run" shows it for a moment and removes it again; Android usually does not show such a short notification at all. An "Open" button on it lets Android show it without its usual delay of up to 10 s.
 - **Plain screens.** The app is a flat dark list of numbers with no rings, bars, gradients or animations: battery level, temperatures, CPU clock (amber at the top clock), RAM, storage, the top apps with a Refresh link, and the display size. Set-up links (Background running, Home Dragon, root) appear only when something is missing. The Debug tab is six lines (State, Why, Link, Service, Last update, Notification), a Copy button and the last five changes of state.
 - **Less data read.** Voltage, charger type, battery health text, technology, cycle count, swap and the hottest sensor are no longer read, because nothing shows them. The widget is unchanged.
+
+## v3.5 - asks Home Dragon on every start and on wake-up
+- **Ask on every new process.** A small `Application` class asks Home Dragon once for its state every time the app's process starts, whatever started it: you opening the app, Android restarting it after you closed it, killed it or it crashed, the widget, a boot, or a message from Home Dragon. (Android never starts a force-stopped app by itself: it stays stopped until you open it.)
+- **Ask on screen on.** While the live service is running, the screen turning on sends one more question. A frozen app that wakes in the same process is covered by this.
+- **Works with Home Dragon 4.11:** Home Dragon holds a change 0.4 s before sending, answers a question at once, and sends a missing confirmation once more after 1 s.
+

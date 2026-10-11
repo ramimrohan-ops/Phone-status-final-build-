@@ -59,6 +59,7 @@ class LiveUpdateService : Service() {
         override fun onReceive(context: Context, intent: Intent) {
             screenOn.value = intent.action == Intent.ACTION_SCREEN_ON
             LiveDebug.setScreenOn(screenOn.value)
+            if (screenOn.value) ForegroundGate.ask(context)      // the phone woke up: ask Home Dragon once for the state it is in
         }
     }
 
