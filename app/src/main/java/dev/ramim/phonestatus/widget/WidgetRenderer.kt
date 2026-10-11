@@ -21,7 +21,7 @@ import kotlin.math.roundToInt
 
 /**
  * Builds the widget's RemoteViews and pushes them straight to the launcher.
- * Only the Refresh button is clickable; a tap anywhere else does nothing.
+ * Only the Top apps bar (with its Refresh pill) is clickable; a tap anywhere else does nothing.
  */
 object WidgetRenderer {
 
@@ -33,14 +33,9 @@ object WidgetRenderer {
     private const val DRAIN_BUSY_MA = 1500
     private const val DRAIN_HIGH_MA = 2500
 
-    // Full circle of the current ring
-    private const val RING_FULL_DRAW_MA = 3000f
-    private const val RING_FULL_CHARGE_MA = 6000f
-
     private const val MINT = 0xFF3DF5A7.toInt()
     private const val AMBER = 0xFFFFB454.toInt()
     private const val RED = 0xFFFF5470.toInt()
-    private const val BLUE = 0xFF7CC4FF.toInt()
     private const val GREY = 0xFF4A5270.toInt()
     private const val SOFT_WHITE = 0xFFE6ECFA.toInt()
 
@@ -53,6 +48,7 @@ object WidgetRenderer {
         AppRow(R.id.w_app1_row, R.id.w_app1_rank, R.id.w_app1_name, R.id.w_app1_mb),
         AppRow(R.id.w_app2_row, R.id.w_app2_rank, R.id.w_app2_name, R.id.w_app2_mb),
         AppRow(R.id.w_app3_row, R.id.w_app3_rank, R.id.w_app3_name, R.id.w_app3_mb),
+        AppRow(R.id.w_app4_row, R.id.w_app4_rank, R.id.w_app4_name, R.id.w_app4_mb),
     )
 
     fun widgetIds(ctx: Context): IntArray =
@@ -67,7 +63,7 @@ object WidgetRenderer {
         for (id in ids) mgr.updateAppWidget(id, views)
     }
 
-    /** Draws once with fresh numbers, outside the one-second loop (used by the Refresh button). */
+    /** Draws once with fresh numbers, outside the update loop (used by the Refresh button). */
     fun redrawNow(ctx: Context) {
         renderAll(ctx, StatsReader.readAll(ctx), LiveStats.thermal ?: ThermalInfo())
     }
@@ -78,7 +74,7 @@ object WidgetRenderer {
         val ring = (72 * density).roundToInt()
         val b = s.battery
 
-        // Refresh button: the only thing on the widget that reacts to a tap.
+        // Top apps bar (label + Refresh pill): the only thing on the widget that reacts to a tap.
         val ta = TopApps.state.value
         v.setOnClickPendingIntent(R.id.w_refresh, refreshIntent(ctx))
         v.setTextViewText(R.id.w_refresh_text, if (ta.busy) "Reading…" else "Refresh")
@@ -89,14 +85,11 @@ object WidgetRenderer {
         v.setTextViewText(R.id.w_battery_pct, "${b.level}")
         v.setTextViewText(R.id.w_batt_temp, "${f1(b.tempC)}°")
 
-        // ---- Current ring ----
+        // ---- Current draw: a solid circle (colour follows the drain), dark text on it ----
         val ma = b.currentMa
-        val curColor = currentColor(b)
-        val frac = if (ma == null) 0f else ma / (if (b.charging) RING_FULL_CHARGE_MA else RING_FULL_DRAW_MA)
-        v.setImageViewBitmap(R.id.w_cur_ring, Rings.arc(ring, frac, curColor, 0.10f))
+        v.setImageViewBitmap(R.id.w_cur_ring, Rings.disc(ring, currentColor(b)))
         v.setTextViewText(R.id.w_cur_val, ma?.toString() ?: "—")
         v.setTextViewText(R.id.w_cur_arrow, if (b.charging) "▲" else "▼")
-        v.setTextColor(R.id.w_cur_arrow, curColor)
 
         // ---- RAM ring ----
         v.setImageViewBitmap(R.id.w_ram_ring, Rings.arc(ring, s.ram.fraction, SOFT_WHITE, 0.10f))
@@ -112,8 +105,7 @@ object WidgetRenderer {
         )
         v.setTextViewText(R.id.w_cpu_ghz, if (mhz == null) "—" else String.format(Locale.US, "%.1f", mhz / 1000f))
 
-        // ---- Top apps: three lines, or one short message when there is no list yet ----
-        v.setTextViewText(R.id.w_apps_age, TopApps.ageText(ta.at))
+        // ---- Top apps: four lines, or one short message when there is no list yet ----
         if (ta.apps.isEmpty()) {
             v.setViewVisibility(R.id.w_apps_note, View.VISIBLE)
             v.setTextViewText(R.id.w_apps_note, if (ta.busy) "Reading…" else noteText(ta.note))
@@ -178,14 +170,14 @@ object WidgetRenderer {
         else -> MINT
     }
 
-    /** Current ring: blue while drawing little, amber when busy, red when high; amber while charging. */
+    /** Current circle: green while drawing little, amber when busy, red when high; amber while charging. */
     private fun currentColor(b: BatteryInfo): Int {
         val ma = b.currentMa ?: return GREY
         return when {
             b.charging -> AMBER
             ma >= DRAIN_HIGH_MA -> RED
             ma >= DRAIN_BUSY_MA -> AMBER
-            else -> BLUE
+            else -> MINT
         }
     }
 

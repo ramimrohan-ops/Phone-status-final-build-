@@ -5,7 +5,7 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.RectF
 
-/** Thin progress rings drawn as bitmaps (a widget cannot draw arcs itself). Same ring is reused while its look is unchanged. */
+/** Thin progress rings and the solid current-draw circle, drawn as bitmaps (a widget cannot draw them itself). Each picture is reused while its look is unchanged. */
 object Rings {
 
     private const val TRACK = 0xFF2A2F45.toInt()
@@ -39,6 +39,32 @@ object Rings {
             val sweep = (360f * steps / 100f).coerceAtLeast(6f)
             c.drawArc(box, -90f, sweep, false, paint)
         }
+        cache[key] = bmp
+        return bmp
+    }
+
+    /**
+     * A solid circle in [color] with a thin faint halo ring around it, [px] pixels wide. The halo is the same colour at about 40% opacity.
+     * Sizes follow the 72 dp slot: circle radius 30, halo centre line at radius 34, halo width 2.
+     */
+    @Synchronized
+    fun disc(px: Int, color: Int): Bitmap {
+        val key = "disc|$px|$color"
+        cache[key]?.let { return it }
+        if (cache.size > 24) cache.clear()
+
+        val bmp = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
+        val c = Canvas(bmp)
+        val u = px / 72f
+        val mid = px / 2f
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = 2f * u
+        paint.color = (color and 0x00FFFFFF) or (0x6B shl 24)
+        c.drawCircle(mid, mid, 34f * u, paint)
+        paint.style = Paint.Style.FILL
+        paint.color = color
+        c.drawCircle(mid, mid, 30f * u, paint)
         cache[key] = bmp
         return bmp
     }

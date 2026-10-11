@@ -336,7 +336,7 @@ private fun DisplaySection(d: DisplayInfo) {
     }
 }
 
-/** The five apps using the most memory right now. Read once per tap, never automatically. */
+/** The apps using the most memory right now. Read once per tap, never automatically. */
 @Composable
 private fun TopAppsSection(s: TopAppsState, onRefresh: () -> Unit, onAllowShizuku: () -> Unit) {
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }

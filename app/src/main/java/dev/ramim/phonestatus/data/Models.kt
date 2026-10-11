@@ -64,7 +64,6 @@ enum class RootState { UNKNOWN, GRANTED, DENIED }
 /** Current clock speeds in MHz. A null core is offline or unreadable. */
 data class FreqInfo(
     val cpuCoresMhz: List<Int?> = emptyList(),
-    val gpuMhz: Int? = null,
 ) {
     val cpuPeakMhz: Int? get() = cpuCoresMhz.filterNotNull().maxOrNull()
 }
